@@ -13,7 +13,7 @@
     },
     "dependencies": {
         "@ant-design/nextjs-registry": "1.0.2",
-        "@prisma/client": "^6.16.3",
+        "@prisma/client": "^7.7.0",
         "@types/react": "19.0.7",
         "@types/react-dom": "19.0.3",
         "@vercel/blob": "^2.0.0",
@@ -25,7 +25,7 @@
         "lodash": "4.17.21",
         "next": "^15.4.0-canary.2",
         "next-auth": "5.0.0-beta.25",
-        "prisma": "^6.16.3",
+        "prisma": "^7.7.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "swr": "^2.3.6",

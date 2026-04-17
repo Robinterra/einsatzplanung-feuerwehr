@@ -1,3 +1,25 @@
+# Run
+## podman variante
+```bash
+cd deployment/debug
+podman-compose up --build
+```
+```bash
+podman-compose -f deployment/debug/docker-compose.yml up --build
+```
+## npm bauen
+Am anfang
+```bash
+npm install
+npx prisma migrate dev --name init
+rm -rf prisma/migrations
+```
+```bash
+npm run build
+npx next@latest .
+npm run dev
+npm run start
+```
 # TODOS
 fix following:
 ```

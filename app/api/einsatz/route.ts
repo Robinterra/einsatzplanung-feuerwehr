@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verteileEinsatzkraefte } from "@/lib/algorithms/einteilung";
+//import { verteileEinsatzkraefte } from "@/lib/algorithms/einteilung";
 
 export async function GET() {
   return NextResponse.json({

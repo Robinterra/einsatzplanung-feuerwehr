@@ -1,29 +1,64 @@
 version: "3.9"
 
 services:
-  db:
-    image: postgres:16
-    container_name: feuerwehr-db
+  feuerwehrdb:
+    image: docker.io/library/mysql:latest
+    container_name: feuerwehrdb
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: feuerwehr
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: feuerwehr
+      MYSQL_USER: feuerwehr
+      MYSQL_PASSWORD: feuerwehr
     ports:
-      - "5432:5432"
+      - "3306:3306"
+    networks:
+      - testanet
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/mysql
 
-  app:
-    build: .
-    container_name: feuerwehr-app
+  prisma-migrate:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    container_name: prisma-migrate
     depends_on:
-      - db
+      - feuerwehrdb
+    networks:
+      - testanet
+    env_file:
+      - ../../.env
+    command: >
+      sh -c "
+      echo '⏳ waiting for db...' &&
+      sleep 10 &&
+      npx prisma generate &&
+      npx prisma migrate deploy
+      "
+
+  feuerwehrapp:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    container_name: feuerwehrapp
+    depends_on:
+      - prisma-migrate
+    networks:
+      - testanet
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/feuerwehr
-    command: sh -c "npx prisma migrate deploy && npm run start"
+      DATABASE_URL: mysql://feuerwehr:feuerwehr@feuerwehrdb:3306/feuerwehr
+    command: sh -c "sleep 10 && npx prisma migrate deploy && npm run start"
 
 volumes:
   db_data:
+
+networks:
+  testanet:
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+        - subnet: "2001:db8:1::/64"
