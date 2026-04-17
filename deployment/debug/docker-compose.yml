@@ -17,39 +17,39 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
-  prisma-migrate:
-    build:
-      context: ../../
-      dockerfile: Dockerfile
-    container_name: prisma-migrate
-    depends_on:
-      - feuerwehrdb
-    networks:
-      - testanet
-    env_file:
-      - ../../.env
-    command: >
-      sh -c "
-      echo '⏳ waiting for db...' &&
-      sleep 10 &&
-      npx prisma generate &&
-      npx prisma migrate deploy
-      "
+#  prisma-migrate:
+#    build:
+#      context: ../../
+#      dockerfile: Dockerfile
+#    container_name: prisma-migrate
+#    depends_on:
+#      - feuerwehrdb
+#    networks:
+#      - testanet
+#    env_file:
+#      - ../../.env
+#    command: >
+#      sh -c "
+#      echo '⏳ waiting for db...' &&
+#      sleep 10 &&
+#      npx prisma generate &&
+#      npx prisma migrate deploy
+#      "
 
-  feuerwehrapp:
-    build:
-      context: ../../
-      dockerfile: Dockerfile
-    container_name: feuerwehrapp
-    depends_on:
-      - prisma-migrate
-    networks:
-      - testanet
-    ports:
-      - "3000:3000"
-    environment:
-      DATABASE_URL: mysql://feuerwehr:feuerwehr@feuerwehrdb:3306/feuerwehr
-    command: sh -c "sleep 10 && npx prisma migrate deploy && npm run start"
+#  feuerwehrapp:
+#    build:
+#      context: ../../
+#      dockerfile: Dockerfile
+#    container_name: feuerwehrapp
+#    depends_on:
+#      - prisma-migrate
+#    networks:
+#      - testanet
+#    ports:
+#      - "3000:3000"
+#    environment:
+#      DATABASE_URL: mysql://feuerwehr:feuerwehr@feuerwehrdb:3306/feuerwehr
+#    command: sh -c "sleep 10 && npx prisma migrate deploy && npm run start"
 
 volumes:
   db_data:
