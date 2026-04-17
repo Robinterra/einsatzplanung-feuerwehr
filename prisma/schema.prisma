@@ -5,11 +5,10 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 model divera_user_sync_problems {
-  id              String                           @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id              String                           @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   last_name       String?                          @db.VarChar(255)
   first_name      String?                          @db.VarChar(255)
   divera_id       Int                              @unique(map: "divera_user_sync_problems_divera_id_pk")
@@ -28,7 +27,7 @@ model divera_user_sync_problems {
 }
 
 model event_participation {
-  id        String  @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id        String  @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   member_id String  @db.VarChar(36)
   event_id  String  @db.VarChar(36)
   events    events  @relation(fields: [event_id], references: [id], onDelete: Cascade, map: "event_participation_events_id_fk")
@@ -39,7 +38,7 @@ model event_participation {
 }
 
 model event_responses {
-  id                    String                                @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                    String                                @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   event_id              String                                @db.VarChar(36)
   member_id             String                                @db.VarChar(36)
   planned_participation event_responses_planned_participation
@@ -51,7 +50,7 @@ model event_responses {
 }
 
 model events {
-  id                  String                @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                  String                @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   divera_id           Int?                  @unique(map: "events_divera_id_pk")
   name                String                @db.VarChar(255)
   start               DateTime              @db.DateTime(0)
@@ -79,7 +78,7 @@ model events {
 }
 
 model feueron_training_mappings {
-  id            String     @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id            String     @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   feueron_name  String     @unique(map: "feueron_training_mappings_feueron_name_pk") @db.VarChar(255)
   feueron_key   String?    @db.VarChar(50)
   training_id   String?    @db.VarChar(36)
@@ -95,7 +94,7 @@ model feueron_training_mappings {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model group_permissions {
-  group_id      String                 @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  group_id      String                 @default(dbgenerated("(cuid())")) @db.VarChar(36)
   permission_id String                 @db.VarChar(36)
   mode          group_permissions_mode
   added_by      String?                @db.VarChar(36)
@@ -111,7 +110,7 @@ model group_permissions {
 }
 
 model groups {
-  id                String               @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                String               @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   name              String               @db.VarChar(100)
   type              groups_type          @default(other)
   created_at        DateTime             @default(now()) @db.DateTime(0)
@@ -132,7 +131,7 @@ model groups {
 }
 
 model job_logs {
-  id        String        @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id        String        @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   job_id    String        @db.VarChar(36)
   timestamp DateTime      @default(now()) @db.Timestamp(0)
   type      job_logs_type
@@ -143,7 +142,7 @@ model job_logs {
 }
 
 model jobs {
-  id                  String                @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                  String                @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   service_id          String                @db.VarChar(36)
   queued              DateTime              @default(now()) @db.DateTime(0)
   started             DateTime?             @db.DateTime(0)
@@ -188,7 +187,7 @@ model member_permissions {
 }
 
 model members {
-  id                                                                       String                      @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                                                                       String                      @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   first_name                                                               String                      @db.VarChar(255)
   last_name                                                                String                      @db.VarChar(255)
   feueron_nr                                                               String?                     @unique(map: "members_feueron_nr_pk") @db.VarChar(15)
@@ -270,7 +269,7 @@ model members {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model permissions {
-  id                 String               @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                 String               @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   key                permissions_key      @unique(map: "permissions_pk")
   name               String               @db.VarChar(256)
   description        String?              @db.Text
@@ -285,7 +284,7 @@ model permissions {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model services {
-  id            String        @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id            String        @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   key           String        @unique(map: "services_pk") @db.VarChar(256)
   name          String?       @db.VarChar(256)
   description   String?       @db.Text
@@ -297,7 +296,7 @@ model services {
 }
 
 model shop_order_items {
-  id            String                   @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id            String                   @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   order_id      String                   @db.VarChar(36)
   product_id    String                   @db.VarChar(36)
   variant       String?                  @db.VarChar(100)
@@ -314,7 +313,7 @@ model shop_order_items {
 }
 
 model shop_orders {
-  id               String             @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id               String             @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   member_id        String             @db.VarChar(36)
   created_at       DateTime?          @default(now()) @db.DateTime(0)
   modified_at      DateTime           @default(now()) @db.DateTime(0)
@@ -328,7 +327,7 @@ model shop_orders {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model shop_products {
-  id               String                  @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id               String                  @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   name             String                  @db.VarChar(256)
   line             String?                 @db.VarChar(256)
   link             String?                 @db.Text
@@ -346,7 +345,7 @@ model shop_products {
 }
 
 model trainings {
-  id                        String                      @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                        String                      @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   name                      String                      @unique(map: "trainings_pk") @db.VarChar(255)
   key                       String                      @db.VarChar(15)
   type                      trainings_type?
@@ -358,7 +357,7 @@ model trainings {
 }
 
 model vehicles {
-  id                        String                      @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                        String                      @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   name                      String                      @db.VarChar(100)
   abbreviation              String                      @db.VarChar(20)
   opta                      String?                     @db.VarChar(20)
@@ -385,7 +384,7 @@ model vehicles {
 }
 
 model vehicle_logs {
-  id                  String         @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                  String         @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   inserted_at         DateTime       @default(now()) @db.Timestamp(0)
   vehicle_id          String         @db.VarChar(36)
   status              vehicle_status
@@ -399,7 +398,7 @@ model vehicle_logs {
 }
 
 model schedules {
-  id         String   @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id         String   @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   service_id String   @db.VarChar(36)
   cron       String   @db.VarChar(30)
   args       String?  @db.VarChar(255)
@@ -409,7 +408,7 @@ model schedules {
 }
 
 model food_menus {
-  id               String              @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id               String              @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   price            Float               @db.Float
   name             String              @db.VarChar(255)
   description      String?             @db.VarChar(255)
@@ -423,7 +422,7 @@ model food_menus {
 }
 
 model food_order_items {
-  id             String                   @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id             String                   @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   order_id       String                   @db.VarChar(36)
   menu_id        String                   @db.VarChar(36)
   member_id      String?                  @db.VarChar(36)
@@ -448,7 +447,7 @@ model food_order_items {
 }
 
 model food_orders {
-  id                     String                   @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                     String                   @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   date                   DateTime                 @default(dbgenerated("(curdate())")) @db.Date
   title                  String?                  @db.VarChar(1024)
   shop_key               String                   @db.VarChar(100)
@@ -492,7 +491,7 @@ model process_record_jobs {
 }
 
 model process_records {
-  id                  String                 @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                  String                 @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   process_id          String                 @db.VarChar(36)
   member_id           String                 @db.VarChar(36)
   status              process_records_status
@@ -507,7 +506,7 @@ model process_records {
 }
 
 model processes {
-  id                                                                   String                 @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                                                                   String                 @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   name                                                                 String                 @db.VarChar(200)
   description                                                          String?                @db.Text
   type                                                                 processes_type
@@ -528,7 +527,7 @@ model processes {
 }
 
 model food_order_status_logs {
-  id              String                        @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id              String                        @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   order_id        String                        @db.VarChar(36)
   status          food_order_status_logs_status
   timestamp       DateTime                      @default(now()) @db.DateTime(0)
@@ -549,7 +548,7 @@ model food_order_shops {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model nameplate_prints {
-  id                                           String   @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                                           String   @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   member_id                                    String   @db.VarChar(36)
   created_by                                   String?  @db.VarChar(36)
   created_at                                   DateTime @default(now()) @db.DateTime(0)
@@ -573,7 +572,7 @@ model member_auth {
 }
 
 model jf_clothes {
-  id                    String                    @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                    String                    @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   parent_id             String?                   @db.VarChar(36)
   key                   String                    @unique(map: "jf_clothes_pk") @db.VarChar(20)
   clothes_type_id       String                    @db.VarChar(36)
@@ -598,7 +597,7 @@ model jf_clothes {
 }
 
 model jf_clothes_transactions {
-  id             String                       @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id             String                       @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   member_id      String                       @db.VarChar(36)
   cloth_id       String                       @db.VarChar(36)
   created_by     String?                      @db.VarChar(36)
@@ -615,7 +614,7 @@ model jf_clothes_transactions {
 }
 
 model jf_clothes_types {
-  id           String             @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id           String             @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   parent_id    String?            @db.VarChar(36)
   abbrev       String             @unique(map: "jf_clothes_type_pk_2") @db.VarChar(10)
   name         String             @db.VarChar(50)
@@ -631,14 +630,14 @@ model jf_clothes_types {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model tasks {
-  id Unsupported("cuid()") @id @default(dbgenerated("(cuid()())"))
+  id Unsupported("cuid()") @id @default(dbgenerated("(cuid())"))
 
   @@ignore
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model vehicle_inventory {
-  id                                             String                                @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                                             String                                @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   vehicle_id                                     String                                @db.VarChar(36)
   compartment                                    vehicle_inventory_compartment?
   parent                                         String?                               @db.VarChar(36)
@@ -662,7 +661,7 @@ model vehicle_inventory {
 }
 
 model jf_member_contacts {
-  id         String                  @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id         String                  @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   member_id  String                  @db.VarChar(36)
   first_name String                  @db.VarChar(30)
   last_name  String                  @db.VarChar(30)
@@ -693,7 +692,7 @@ model shop_vendor_orders {
 }
 
 model shop_vendors {
-  id                 String               @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                 String               @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   name               String               @db.VarChar(40)
   link               String?              @db.VarChar(200)
   shop_products      shop_products[]
@@ -745,7 +744,7 @@ model event_shift_participation {
 }
 
 model member_presence_logs {
-  id            String                       @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id            String                       @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   member_id     String                       @db.VarChar(36)
   timestamp     DateTime                     @default(now()) @db.Timestamp(0)
   present       Boolean
@@ -759,7 +758,7 @@ model member_presence_logs {
 }
 
 model vehicle_seats {
-  id                        String?                     @unique(map: "id") @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                        String?                     @unique(map: "id") @default(dbgenerated("(cuid())")) @db.VarChar(36)
   vehicle_id                String                      @db.VarChar(36)
   agt                       Boolean                     @default(false)
   seat                      vehicle_seats_seat
@@ -772,7 +771,7 @@ model vehicle_seats {
 }
 
 model jf_clothes_state_logs {
-  id            String                      @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id            String                      @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   cloth_id      String                      @db.VarChar(36)
   state         jf_clothes_state_logs_state
   timestamp     DateTime                    @default(now()) @db.DateTime(0)
@@ -795,7 +794,7 @@ model event_responsibles {
 }
 
 model vehicle_instruction_logs {
-  id                                                   String    @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                                                   String    @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   vehicle_id                                           String    @db.VarChar(36)
   member_id                                            String    @db.VarChar(36)
   created_at                                           DateTime  @default(now()) @db.DateTime(0)
@@ -812,7 +811,7 @@ model vehicle_instruction_logs {
 }
 
 model member_training_logs {
-  id                                               String                      @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                                               String                      @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   member_id                                        String                      @db.VarChar(36)
   training_id                                      String                      @db.VarChar(36)
   status                                           member_training_logs_status
@@ -830,7 +829,7 @@ model member_training_logs {
 }
 
 model group_member_logs {
-  id                                            String   @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                                            String   @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   group_id                                      String   @db.VarChar(36)
   member_id                                     String   @db.VarChar(36)
   timestamp                                     DateTime @default(now()) @db.DateTime(0)
@@ -846,7 +845,7 @@ model group_member_logs {
 }
 
 model member_attribute_logs {
-  id             String                       @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id             String                       @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   member_id      String                       @db.VarChar(36)
   key            member_attribute_logs_key
   value          String?                      @db.VarChar(255)
@@ -861,14 +860,14 @@ model member_attribute_logs {
 }
 
 model api_auth {
-  id          String  @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id          String  @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   username    String  @unique(map: "api_auth_pk") @db.VarChar(200)
   password    String  @db.VarChar(200)
   application String? @db.VarChar(200)
 }
 
 model ff_clothes {
-  id                     String                   @unique(map: "ff_clothes_pk") @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                     String                   @unique(map: "ff_clothes_pk") @default(dbgenerated("(cuid())")) @db.VarChar(36)
   category               String?                  @db.VarChar(100)
   type                   String?                  @db.VarChar(100)
   name                   String?                  @db.VarChar(100)
@@ -878,7 +877,7 @@ model ff_clothes {
 }
 
 model ff_member_clothes_logs {
-  id            String     @id @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id            String     @id @default(dbgenerated("(cuid())")) @db.VarChar(36)
   cloth_id      String     @db.VarChar(36)
   member_id     String     @db.VarChar(36)
   timestamp     DateTime   @default(now()) @db.DateTime(0)
@@ -891,7 +890,7 @@ model ff_member_clothes_logs {
 }
 
 view job_metrics {
-  id           String              @unique @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id           String              @unique @default(dbgenerated("(cuid())")) @db.VarChar(36)
   service_id   String              @db.VarChar(36)
   status       job_metrics_status?
   args         String?             @db.VarChar(255)
@@ -908,7 +907,7 @@ view job_metrics {
 }
 
 view food_order_member_stats {
-  id              String                          @unique @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id              String                          @unique @default(dbgenerated("(cuid())")) @db.VarChar(36)
   first_name      String                          @db.VarChar(255)
   last_name       String                          @db.VarChar(255)
   personnel_nr    Int?
@@ -919,7 +918,7 @@ view food_order_member_stats {
 }
 
 view food_order_menu_stats {
-  id            String                         @unique @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id            String                         @unique @default(dbgenerated("(cuid())")) @db.VarChar(36)
   price         Float                          @db.Float
   name          String                         @db.VarChar(255)
   description   String?                        @db.VarChar(255)
@@ -930,7 +929,7 @@ view food_order_menu_stats {
 }
 
 view clothes_view {
-  id              String                   @unique @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id              String                   @unique @default(dbgenerated("(cuid())")) @db.VarChar(36)
   parent_id       String?                  @db.VarChar(36)
   key             String                   @unique @db.VarChar(20)
   clothes_type_id String                   @db.VarChar(36)
@@ -953,7 +952,7 @@ view clothes_view {
 
 /// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 view member_presence_view {
-  id                 String                           @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id                 String                           @default(dbgenerated("(cuid())")) @db.VarChar(36)
   first_name         String                           @db.VarChar(255)
   last_name          String                           @db.VarChar(255)
   personnel_nr       Int?
@@ -968,7 +967,7 @@ view member_presence_view {
 }
 
 view vehicle_instructions_view {
-  id              String    @unique @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id              String    @unique @default(dbgenerated("(cuid())")) @db.VarChar(36)
   vehicle_id      String    @db.VarChar(36)
   member_id       String    @db.VarChar(36)
   created_at      DateTime  @default(now()) @db.DateTime(0)
@@ -980,7 +979,7 @@ view vehicle_instructions_view {
 }
 
 view member_trainings_view {
-  id             String                       @unique @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id             String                       @unique @default(dbgenerated("(cuid())")) @db.VarChar(36)
   member_id      String                       @db.VarChar(36)
   training_id    String                       @db.VarChar(36)
   status         member_trainings_view_status
@@ -994,7 +993,7 @@ view member_trainings_view {
 }
 
 view group_members_view {
-  id             String   @unique @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id             String   @unique @default(dbgenerated("(cuid())")) @db.VarChar(36)
   group_id       String   @db.VarChar(36)
   member_id      String   @db.VarChar(36)
   timestamp      DateTime @default(now()) @db.DateTime(0)
@@ -1005,7 +1004,7 @@ view group_members_view {
 }
 
 view members_view {
-  id             String  @unique @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id             String  @unique @default(dbgenerated("(cuid())")) @db.VarChar(36)
   first_name     String? @db.VarChar(255)
   last_name      String? @db.VarChar(255)
   personnel_nr   String? @db.VarChar(255)
@@ -1022,7 +1021,7 @@ view members_view {
 }
 
 view member_attributes_view {
-  id             String                        @unique @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id             String                        @unique @default(dbgenerated("(cuid())")) @db.VarChar(36)
   member_id      String                        @db.VarChar(36)
   key            member_attributes_view_key
   value          String?                       @db.VarChar(255)
@@ -1034,7 +1033,7 @@ view member_attributes_view {
 }
 
 view member_search_view {
-  id           String  @unique @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  id           String  @unique @default(dbgenerated("(cuid())")) @db.VarChar(36)
   first_name   String  @db.VarChar(255)
   last_name    String  @db.VarChar(255)
   personnel_nr Int?
@@ -1043,7 +1042,7 @@ view member_search_view {
 
 /// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 view ff_clothes_view {
-  cloth_id  String      @unique @default(dbgenerated("(cuid()())")) @db.VarChar(36)
+  cloth_id  String      @unique @default(dbgenerated("(cuid())")) @db.VarChar(36)
   name      String?     @db.VarChar(100)
   size      String?     @db.VarChar(20)
   type      String?     @db.VarChar(100)
