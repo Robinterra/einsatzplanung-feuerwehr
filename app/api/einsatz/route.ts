@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 //import { verteileEinsatzkraefte } from "@/lib/algorithms/einteilung";
+import { prisma } from "@/lib/db/prisma";
 
 export async function GET() {
-  return NextResponse.json({
-    message: "Einsatz API läuft"
-  });
+  const autos = await prisma.vehicles.findMany();
+  return NextResponse.json(autos);
 }
 
 export async function POST(req: Request) {

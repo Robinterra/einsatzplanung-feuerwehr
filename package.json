@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "@ant-design/nextjs-registry": "1.0.2",
+        "@prisma/adapter-mariadb": "^7.7.0",
         "@prisma/client": "^7.7.0",
         "@types/react": "19.0.7",
         "@types/react-dom": "19.0.3",
