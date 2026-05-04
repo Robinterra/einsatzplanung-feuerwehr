@@ -7,25 +7,6 @@ datasource db {
   provider = "mysql"
 }
 
-model divera_user_sync_problems {
-  id              String                           @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  last_name       String?                          @db.VarChar(255)
-  first_name      String?                          @db.VarChar(255)
-  divera_id       Int                              @unique(map: "divera_user_sync_problems_divera_id_pk")
-  created_at      DateTime                         @default(now()) @db.DateTime(0)
-  modified_at     DateTime                         @default(now()) @db.DateTime(0)
-  solved          Boolean                          @default(false)
-  solved_at       DateTime?                        @db.DateTime(0)
-  solved_by       String?                          @db.VarChar(36)
-  reason          divera_user_sync_problems_reason
-  assigned_to     String?                          @db.VarChar(36)
-  member_assigned members?                         @relation("divera_user_sync_problems_assigned_toTomembers", fields: [assigned_to], references: [id], map: "divera_user_sync_problems_assigned_fk")
-  member_solved   members?                         @relation("divera_user_sync_problems_solved_byTomembers", fields: [solved_by], references: [id], map: "divera_user_sync_problems_solver_fk")
-
-  @@index([assigned_to], map: "divera_user_sync_problems_assigned_fk")
-  @@index([solved_by], map: "divera_user_sync_problems_solver_fk")
-}
-
 model event_participation {
   id        String  @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
   member_id String  @db.VarChar(36)
@@ -50,81 +31,80 @@ model event_responses {
 }
 
 model events {
-  id                  String                @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  divera_id           Int?                  @unique(map: "events_divera_id_pk")
-  name                String                @db.VarChar(255)
-  start               DateTime              @db.DateTime(0)
-  end                 DateTime              @db.DateTime(0)
-  address             String?               @db.VarChar(255)
-  draft               Boolean               @default(true)
-  description         String?               @db.VarChar(2040)
-  divera_sync         Boolean?              @default(true)
-  modified_at         DateTime              @default(now()) @db.Timestamp(0)
-  created_at          DateTime              @default(now()) @db.Timestamp(0)
-  source              events_source
-  feueron_id          String?               @db.VarChar(10)
-  status              events_status?
-  type                events_type?
-  created_by          String?               @db.VarChar(36)
-  event_groups        event_groups[]
-  event_participation event_participation[]
-  event_responses     event_responses[]
-  event_responsibles  event_responsibles[]
-  event_shift         event_shift[]
-  members             members?              @relation(fields: [created_by], references: [id], map: "events_members_id_fk")
-  food_orders         food_orders[]
+  id                      String                   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  divera_id               Int?                     @unique(map: "events_divera_id_pk")
+  title                   String                   @db.VarChar(255)
+  start                   DateTime                 @db.DateTime(0)
+  end                     DateTime                 @db.DateTime(0)
+  address                 String?                  @db.VarChar(255)
+  draft                   Boolean                  @default(true)
+  description             String?                  @db.VarChar(2040)
+  divera_sync             Boolean?                 @default(true)
+  modified_at             DateTime                 @default(now()) @db.Timestamp(0)
+  created_at              DateTime                 @default(now()) @db.Timestamp(0)
+  source                  events_source
+  feueron_id              String?                  @db.VarChar(10)
+  status                  events_status?
+  type                    events_type?
+  created_by              String                   @db.VarChar(36)
+  planning_session_id     String?                  @db.VarChar(36)
+  divera_profile_id       String?                  @db.VarChar(36)
+  event_groups            event_groups[]
+  event_participation     event_participation[]
+  event_responses         event_responses[]
+  event_responsibles      event_responsibles[]
+  event_shift             event_shift[]
+  members                 auth_entities            @relation(fields: [created_by], references: [id], map: "events_members_id_fk")
+  divera_event_profile    divera_event_profile?    @relation(fields: [divera_profile_id], references: [id], map: "events_divera_event_profile_id_fk")
+  event_planning_sessions event_planning_sessions? @relation(fields: [planning_session_id], references: [id], map: "events_planning_session_fk")
+  food_orders             food_orders[]
 
-  @@index([created_by], map: "events_members_id_fk")
+  @@index([planning_session_id], map: "event_planning_session_fk")
+  @@index([created_by], map: "events_auth_entities_id_fk")
+  @@index([divera_profile_id], map: "events_divera_event_profile_id_fk")
 }
 
 model feueron_training_mappings {
-  id            String     @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  feueron_name  String     @unique(map: "feueron_training_mappings_feueron_name_pk") @db.VarChar(255)
-  feueron_key   String?    @db.VarChar(50)
-  training_id   String?    @db.VarChar(36)
-  ignore        Boolean    @default(false)
-  mapped_at     DateTime?  @db.DateTime(0)
-  mapped_by     String?    @db.VarChar(36)
-  member_mapped members?   @relation(fields: [mapped_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "feueron_training_mappings_members_id_fk")
-  training      trainings? @relation(fields: [training_id], references: [id], map: "feueron_training_mappings_training_fk")
+  id                                                                          String         @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  feueron_name                                                                String         @unique(map: "feueron_training_mappings_feueron_name_pk") @db.VarChar(255)
+  feueron_key                                                                 String?        @db.VarChar(50)
+  training_id                                                                 String?        @db.VarChar(36)
+  ignore                                                                      Boolean        @default(false)
+  mapped_at                                                                   DateTime?      @db.DateTime(0)
+  created_at                                                                  DateTime?      @default(now()) @db.Timestamp(0)
+  mapped_by_entity_id                                                         String?        @db.VarChar(36)
+  created_by_entity_id                                                        String?        @db.VarChar(36)
+  created_by                                                                  String?        @db.VarChar(36)
+  auth_entities_feueron_training_mappings_created_by_entity_idToauth_entities auth_entities? @relation("feueron_training_mappings_created_by_entity_idToauth_entities", fields: [created_by_entity_id], references: [id], map: "feueron_training_mappings_auth_entities_id_fk")
+  auth_entities_feueron_training_mappings_mapped_by_entity_idToauth_entities  auth_entities? @relation("feueron_training_mappings_mapped_by_entity_idToauth_entities", fields: [mapped_by_entity_id], references: [id], map: "feueron_training_mappings_auth_entities_id_fk_2")
+  members                                                                     members?       @relation(fields: [created_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "feueron_training_mappings_members_id_fk")
+  training                                                                    trainings?     @relation(fields: [training_id], references: [id], map: "feueron_training_mappings_training_fk")
 
   @@index([training_id], map: "feueron_training_mappings_training_fk")
-  @@index([mapped_by], map: "feueron_training_mappings_members_id_fk")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model group_permissions {
-  group_id      String                 @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  permission_id String                 @db.VarChar(36)
-  mode          group_permissions_mode
-  added_by      String?                @db.VarChar(36)
-  added_at      DateTime?              @default(now()) @db.DateTime(0)
-  permission    permissions            @relation(fields: [permission_id], references: [id], onDelete: Cascade, map: "group_permissions_permissions_id_fk")
-  group         groups                 @relation(fields: [group_id], references: [id], onDelete: Cascade, map: "group_roles_groups_id_fk")
-  member        members?               @relation(fields: [added_by], references: [id], map: "group_roles_members_id_fk")
-
-  @@id([group_id, permission_id, mode])
-  @@unique([group_id, permission_id, mode], map: "group_permissions_pk")
-  @@index([permission_id], map: "group_permissions_permissions_id_fk")
-  @@index([added_by], map: "group_roles_members_id_fk")
+  @@index([created_by], map: "feueron_training_mappings_members_id_fk")
+  @@index([created_by_entity_id], map: "feueron_training_mappings_auth_entities_id_fk")
+  @@index([mapped_by_entity_id], map: "feueron_training_mappings_auth_entities_id_fk_2")
 }
 
 model groups {
-  id                String               @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  name              String               @db.VarChar(100)
-  type              groups_type          @default(other)
-  created_at        DateTime             @default(now()) @db.DateTime(0)
-  updated_at        DateTime             @default(now()) @db.DateTime(0)
-  created_by        String?              @db.VarChar(36)
-  updated_by        String?              @db.VarChar(36)
-  active            Boolean              @default(true)
-  ref               groups_ref?
-  event_groups      event_groups[]
-  group_member_logs group_member_logs[]
-  group_permissions group_permissions[]
-  member_created    members?             @relation("groups_created_byTomembers", fields: [created_by], references: [id], map: "groups_created_fk")
-  member_updated    members?             @relation("groups_updated_byTomembers", fields: [updated_by], references: [id], map: "groups_updated_fk")
-  group_members     group_members_view[]
+  id                                  String                                @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name                                String                                @db.VarChar(100)
+  type                                groups_type                           @default(other)
+  created_at                          DateTime                              @default(now()) @db.DateTime(0)
+  updated_at                          DateTime                              @default(now()) @db.DateTime(0)
+  created_by                          String?                               @db.VarChar(36)
+  updated_by                          String?                               @db.VarChar(36)
+  active                              Boolean                               @default(true)
+  ref                                 groups_ref?
+  function_email                      String?                               @db.VarChar(100)
+  auth_entities                       auth_entities?
+  event_groups                        event_groups[]
+  group_divera_groups                 group_divera_groups[]
+  group_member_logs                   group_member_logs[]
+  member_created                      members?                              @relation("groups_created_byTomembers", fields: [created_by], references: [id], map: "groups_created_fk")
+  member_updated                      members?                              @relation("groups_updated_byTomembers", fields: [updated_by], references: [id], map: "groups_updated_fk")
+  tickets                             tickets[]
+  workflow_notification_process_props workflow_notification_process_props[]
 
   @@index([created_by], map: "groups_created_fk")
   @@index([updated_by], map: "groups_updated_fk")
@@ -136,163 +116,116 @@ model job_logs {
   timestamp DateTime      @default(now()) @db.Timestamp(0)
   type      job_logs_type
   message   String        @db.Text
-  jobs      jobs          @relation(fields: [job_id], references: [id], onDelete: Cascade, map: "job_logs_jobs_id_fk")
+  details   String?       @db.Text
+  jobs      jobs_runs     @relation(fields: [job_id], references: [id], onDelete: Cascade, map: "job_logs_jobs_id_fk")
 
   @@index([job_id], map: "job_logs_jobs_id_fk")
 }
 
 model jobs {
-  id                  String                @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  service_id          String                @db.VarChar(36)
-  queued              DateTime              @default(now()) @db.DateTime(0)
-  started             DateTime?             @db.DateTime(0)
-  status              jobs_status?
-  args                String?               @db.VarChar(255)
-  finished            DateTime?             @db.DateTime(0)
-  queued_by           String?               @db.VarChar(36)
-  job_logs            job_logs[]
-  member              members?              @relation(fields: [queued_by], references: [id], map: "jobs_queued_by_fk")
-  service             services              @relation(fields: [service_id], references: [id], onDelete: Cascade, map: "jobs_services_id_fk")
-  process_record_jobs process_record_jobs[]
-
-  @@index([queued_by], map: "jobs_queued_by_fk")
-  @@index([service_id], map: "jobs_services_id_fk")
+  id          String      @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  key         String      @unique(map: "jobs_pk") @db.VarChar(256)
+  name        String?     @db.VarChar(256)
+  description String?     @db.Text
+  jobs_runs   jobs_runs[]
 }
 
 model lockers {
-  id                                   String    @id @db.VarChar(5)
-  member_id                            String?   @db.VarChar(36)
-  modified_by                          String?   @db.VarChar(36)
-  modified_at                          DateTime? @default(now()) @db.Timestamp(0)
-  members                              members?  @relation("lockers_member_idTomembers", fields: [member_id], references: [id], map: "lockers_members_fk")
-  members_lockers_modified_byTomembers members?  @relation("lockers_modified_byTomembers", fields: [modified_by], references: [id], map: "lockers_members_id_fk")
+  id                    String         @id @db.VarChar(5)
+  member_id             String?        @db.VarChar(36)
+  modified_at           DateTime?      @default(now()) @db.Timestamp(0)
+  modified_by_entity_id String?        @db.VarChar(36)
+  auth_entities         auth_entities? @relation(fields: [modified_by_entity_id], references: [id], map: "lockers_auth_entities_id_fk")
+  members               members?       @relation("lockers_member_idTomembers", fields: [member_id], references: [id], map: "lockers_members_fk")
 
   @@index([member_id], map: "lockers_members_fk")
-  @@index([modified_by], map: "lockers_members_id_fk")
-}
-
-model member_permissions {
-  member_id       String                  @db.VarChar(36)
-  permission_id   String                  @db.VarChar(36)
-  mode            member_permissions_mode
-  added_by        String                  @db.VarChar(36)
-  added_at        DateTime?               @default(now()) @db.DateTime(0)
-  member_added_by members                 @relation("member_permissions_added_byTomembers", fields: [added_by], references: [id], onUpdate: Restrict, map: "member_permissions_members_id_fk")
-  member          members                 @relation("member_permissions_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "member_permissions_members_id_fk_2")
-  permission      permissions             @relation(fields: [permission_id], references: [id], onDelete: Cascade, map: "member_permissions_permissions_id_fk")
-
-  @@id([permission_id, member_id, mode])
-  @@index([member_id], map: "member_permissions_members_id_fk_2")
-  @@index([added_by], map: "member_permissions_members_id_added_by_fk")
+  @@index([modified_by_entity_id], map: "lockers_auth_entities_id_fk")
 }
 
 model members {
-  id                                                                       String                      @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  first_name                                                               String                      @db.VarChar(255)
-  last_name                                                                String                      @db.VarChar(255)
-  feueron_nr                                                               String?                     @unique(map: "members_feueron_nr_pk") @db.VarChar(15)
-  personnel_nr                                                             Int?
-  birthdate                                                                DateTime?                   @db.Date
-  gender                                                                   members_gender?
-  iserv_username                                                           String?                     @db.VarChar(255)
-  divera_id                                                                Int?                        @unique(map: "members_divera_id_pk")
-  image_url                                                                String?                     @db.VarChar(500)
-  modified_at                                                              DateTime                    @default(now()) @db.DateTime(0)
-  department                                                               members_department?
-  created_by                                                               String?                     @db.VarChar(36)
-  status                                                                   members_status              @default(active)
-  divera_user_sync_problems_divera_user_sync_problems_assigned_toTomembers divera_user_sync_problems[] @relation("divera_user_sync_problems_assigned_toTomembers")
-  divera_user_sync_problems_divera_user_sync_problems_solved_byTomembers   divera_user_sync_problems[] @relation("divera_user_sync_problems_solved_byTomembers")
-  event_participation                                                      event_participation[]
-  event_responses                                                          event_responses[]
-  event_responsibles                                                       event_responsibles[]
-  event_shift_participation                                                event_shift_participation[]
-  events                                                                   events[]
-  feueron_training_mappings                                                feueron_training_mappings[]
-  ff_member_clothes_logs                                                   ff_member_clothes_logs[]
-  food_order_items                                                         food_order_items[]          @relation("food_order_items_member_idTomembers")
-  food_order_items_created                                                 food_order_items[]          @relation("food_order_items_created_byTomembers")
-  food_order_status_logs                                                   food_order_status_logs[]
-  food_orders_modified                                                     food_orders[]
-  group_member_logs                                                        group_member_logs[]         @relation("group_member_logs_member_idTomembers")
-  group_member_logs_created                                                group_member_logs[]         @relation("group_member_logs_created_byTomembers")
-  group_permissions                                                        group_permissions[]
-  groups_groups_created_byTomembers                                        groups[]                    @relation("groups_created_byTomembers")
-  groups_groups_updated_byTomembers                                        groups[]                    @relation("groups_updated_byTomembers")
-  jf_clothes                                                               jf_clothes[]
-  jf_clothes_state_logs                                                    jf_clothes_state_logs[]
-  jf_clothes_transactions_jf_clothes_transactions_member_idTomembers       jf_clothes_transactions[]   @relation("jf_clothes_transactions_member_idTomembers")
-  jf_clothes_transactions_jf_clothes_transactions_created_byTomembers      jf_clothes_transactions[]   @relation("jf_clothes_transactions_created_byTomembers")
-  other_jf_member_contacts                                                 jf_member_contacts[]        @relation("jf_member_contactsTojf_member_contacts")
-  jf_member_properties                                                     jf_member_properties?
-  jobs                                                                     jobs[]
-  lockers_lockers_member_idTomembers                                       lockers[]                   @relation("lockers_member_idTomembers")
-  lockers_lockers_modified_byTomembers                                     lockers[]                   @relation("lockers_modified_byTomembers")
-  member_attribute_logs                                                    member_attribute_logs[]     @relation("member_attribute_logs_member_idTomembers")
-  member_attribute_logs_created                                            member_attribute_logs[]     @relation("member_attribute_logs_created_byTomembers")
-  member_auth_member_auth_member_idTomembers                               member_auth?                @relation("member_auth_member_idTomembers")
-  member_auth_member_auth_modified_byTomembers                             member_auth[]               @relation("member_auth_modified_byTomembers")
-  member_permissions_created                                               member_permissions[]        @relation("member_permissions_added_byTomembers")
-  member_permissions                                                       member_permissions[]        @relation("member_permissions_member_idTomembers")
-  member_presence_logs                                                     member_presence_logs[]
-  training_logs_created                                                    member_training_logs[]      @relation("member_training_logs_created_byTomembers")
-  training_logs                                                            member_training_logs[]      @relation("member_training_logs_member_idTomembers")
-  members                                                                  members?                    @relation("membersTomembers", fields: [created_by], references: [id], map: "members_members_id_fk")
-  other_members                                                            members[]                   @relation("membersTomembers")
-  nameplate_prints                                                         nameplate_prints[]          @relation("nameplate_prints_member_idTomembers")
-  nameplate_prints_nameplate_prints_created_byTomembers                    nameplate_prints[]          @relation("nameplate_prints_created_byTomembers")
-  process_dependencies                                                     process_dependencies[]
-  process_records                                                          process_records[]
-  processes                                                                processes[]
-  shop_orders                                                              shop_orders[]
-  shop_vendor_orders                                                       shop_vendor_orders[]
-  vehicle_instruction_logs                                                 vehicle_instruction_logs[]  @relation("vehicle_instruction_logs_member_idTomembers")
-  vehicle_instruction_logs_created                                         vehicle_instruction_logs[]  @relation("vehicle_instruction_logs_created_byTomembers")
-  vehicle_inventory_vehicle_inventory_inserted_byTomembers                 vehicle_inventory[]         @relation("vehicle_inventory_inserted_byTomembers")
-  vehicle_inventory_vehicle_inventory_modified_byTomembers                 vehicle_inventory[]         @relation("vehicle_inventory_modified_byTomembers")
-  job_metrics                                                              job_metrics[]
-  clothes_view_assigned_member                                             clothes_view[]              @relation("clothes_view_assigned_member")
-  clothes_view_createdByMember                                             clothes_view[]              @relation("clothes_view_createdByMember")
-  vehicle_instructions                                                     vehicle_instructions_view[] @relation("vehicle_instructions_view_member_idTomembers")
-  vehicle_instructions_created                                             vehicle_instructions_view[] @relation("vehicle_instructions_view_created_byTomembers")
-  member_trainings                                                         member_trainings_view[]     @relation("member_trainings_view_member_idTomembers")
-  created_member_trainings                                                 member_trainings_view[]     @relation("member_trainings_view_created_byTomembers")
-  group_memberships                                                        group_members_view[]        @relation("group_members_view_member_idTomembers")
-  group_memberships_created                                                group_members_view[]        @relation("group_members_view_created_byTomembers")
-  members_view                                                             members_view[]
-  member_attributes_view                                                   member_attributes_view[]    @relation("member_attributes_view_member_idTomembers")
-  member_attributes_view_created                                           member_attributes_view[]    @relation("member_attributes_view_created_byTomembers")
-  ff_clothes_view                                                          ff_clothes_view[]
+  id                                                                  String                         @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  first_name                                                          String                         @db.VarChar(255)
+  last_name                                                           String                         @db.VarChar(255)
+  feueron_nr                                                          String?                        @unique(map: "members_feueron_nr_pk") @db.VarChar(15)
+  personnel_nr                                                        Int?
+  birthdate                                                           DateTime?                      @db.Date
+  gender                                                              members_gender?
+  iserv_username                                                      String?                        @db.VarChar(255)
+  divera_id                                                           Int?                           @unique(map: "members_divera_id_pk")
+  image_url                                                           String?                        @db.VarChar(500)
+  modified_at                                                         DateTime                       @default(now()) @db.DateTime(0)
+  department                                                          members_department?
+  created_by                                                          String?                        @db.VarChar(36)
+  status                                                              members_status                 @default(active)
+  entity_created_id                                                   String?                        @db.VarChar(36)
+  api_auth                                                            api_auth[]
+  auth_entities_auth_entities_member_idTomembers                      auth_entities?                 @relation("auth_entities_member_idTomembers")
+  auth_hash                                                           auth_hash?
+  auth_profiles                                                       auth_profiles[]
+  auth_trusted_devices                                                auth_trusted_devices[]
+  checklists_execution_members                                        checklists_execution_members[]
+  divera_event_profile_user                                           divera_event_profile_user[]
+  drinks_bookings                                                     drinks_bookings[]
+  event_participation                                                 event_participation[]
+  event_responses                                                     event_responses[]
+  event_responsibles                                                  event_responsibles[]
+  event_shift_participation                                           event_shift_participation[]
+  feueron_member_mappings                                             feueron_member_mappings?
+  feueron_training_mappings                                           feueron_training_mappings[]
+  ff_member_clothes_logs                                              ff_member_clothes_logs[]
+  food_order_items                                                    food_order_items[]             @relation("food_order_items_member_idTomembers")
+  food_order_items_created                                            food_order_items[]             @relation("food_order_items_created_byTomembers")
+  food_orders_modified                                                food_orders[]
+  group_member_logs                                                   group_member_logs[]            @relation("group_member_logs_member_idTomembers")
+  groups_groups_created_byTomembers                                   groups[]                       @relation("groups_created_byTomembers")
+  groups_groups_updated_byTomembers                                   groups[]                       @relation("groups_updated_byTomembers")
+  jf_clothes                                                          jf_clothes[]
+  jf_clothes_transactions_jf_clothes_transactions_member_idTomembers  jf_clothes_transactions[]      @relation("jf_clothes_transactions_member_idTomembers")
+  jf_clothes_transactions_jf_clothes_transactions_created_byTomembers jf_clothes_transactions[]      @relation("jf_clothes_transactions_created_byTomembers")
+  jf_event_participants                                               jf_event_participants[]
+  jf_events                                                           jf_events[]
+  other_jf_member_contacts                                            jf_member_contacts[]           @relation("jf_member_contactsTojf_member_contacts")
+  jf_member_properties                                                jf_member_properties?
+  lockers_lockers_member_idTomembers                                  lockers[]                      @relation("lockers_member_idTomembers")
+  member_attribute_logs                                               member_attribute_logs[]        @relation("member_attribute_logs_member_idTomembers")
+  member_presence_logs                                                member_presence_logs[]
+  training_logs                                                       member_training_logs[]         @relation("member_training_logs_member_idTomembers")
+  auth_entities_members_entity_created_idToauth_entities              auth_entities?                 @relation("members_entity_created_idToauth_entities", fields: [entity_created_id], references: [id], map: "members_auth_entities_id_fk")
+  members                                                             members?                       @relation("membersTomembers", fields: [created_by], references: [id], map: "members_members_id_fk")
+  other_members                                                       members[]                      @relation("membersTomembers")
+  nameplate_prints                                                    nameplate_prints[]             @relation("nameplate_prints_member_idTomembers")
+  pager                                                               pager[]
+  shop_orders                                                         shop_orders[]
+  shop_vendor_orders                                                  shop_vendor_orders[]
+  ticket_assignments                                                  ticket_assignments[]
+  tickets                                                             tickets[]
+  vehicle_instruction_logs                                            vehicle_instruction_logs[]     @relation("vehicle_instruction_logs_member_idTomembers")
+  vehicle_inventory_vehicle_inventory_inserted_byTomembers            vehicle_inventory[]            @relation("vehicle_inventory_inserted_byTomembers")
+  vehicle_inventory_vehicle_inventory_modified_byTomembers            vehicle_inventory[]            @relation("vehicle_inventory_modified_byTomembers")
+  workflow_executions                                                 workflow_executions[]
+  workflow_process_connections                                        workflow_process_connections[]
+  workflow_processes                                                  workflow_processes[]
 
   @@index([created_by], map: "members_members_id_fk")
+  @@index([entity_created_id], map: "members_auth_entities_id_fk")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model permissions {
-  id                 String               @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  key                permissions_key      @unique(map: "permissions_pk")
-  name               String               @db.VarChar(256)
-  description        String?              @db.Text
-  modes              String?              @default("read") @db.VarChar(200)
-  read               Boolean              @default(false)
-  update             Boolean              @default(false)
-  create             Boolean              @default(false)
-  delete             Boolean              @default(false)
-  group_permissions  group_permissions[]
-  member_permissions member_permissions[]
-}
+  id                      String                    @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  parent_id               String?                   @db.VarChar(36)
+  key                     permissions_key?          @unique(map: "permissions_pk")
+  name                    String                    @db.VarChar(256)
+  description             String?                   @db.Text
+  read                    Boolean                   @default(false)
+  update                  Boolean                   @default(false)
+  create                  Boolean                   @default(false)
+  delete                  Boolean                   @default(false)
+  auth_entity_permissions auth_entity_permissions[]
+  permissions             permissions?              @relation("permissionsTopermissions", fields: [parent_id], references: [id], map: "permissions_permissions_id_fk")
+  other_permissions       permissions[]             @relation("permissionsTopermissions")
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model services {
-  id            String        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  key           String        @unique(map: "services_pk") @db.VarChar(256)
-  name          String?       @db.VarChar(256)
-  description   String?       @db.Text
-  possible_args String?       @db.Text
-  jobs          jobs[]
-  processes     processes[]
-  schedules     schedules[]
-  job_metrics   job_metrics[]
+  @@index([parent_id], map: "permissions_permissions_id_fk")
 }
 
 model shop_order_items {
@@ -351,36 +284,37 @@ model trainings {
   type                      trainings_type?
   color                     String?                     @db.VarChar(6)
   ref                       trainings_ref?
+  divera_trainings          divera_trainings[]
   feueron_training_mappings feueron_training_mappings[]
   member_training_logs      member_training_logs[]
-  member_trainings_view     member_trainings_view[]
 }
 
 model vehicles {
-  id                        String                      @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  name                      String                      @db.VarChar(100)
-  abbreviation              String                      @db.VarChar(20)
-  opta                      String?                     @db.VarChar(20)
-  license_plate             String?                     @db.VarChar(20)
-  image                     String?                     @db.VarChar(256)
-  needs_instruction         Boolean?                    @default(false)
-  driver_cab                Boolean                     @default(true)
-  crew_cab                  Boolean                     @default(true)
-  seat_front                Boolean                     @default(true)
-  seat_back                 Boolean                     @default(true)
-  G1                        Boolean                     @default(true)
-  G2                        Boolean                     @default(true)
-  G3                        Boolean                     @default(true)
-  G4                        Boolean                     @default(true)
-  G5                        Boolean                     @default(true)
-  G6                        Boolean                     @default(true)
-  back                      Boolean                     @default(true)
-  top                       Boolean                     @default(true)
-  vehicle_instruction_logs  vehicle_instruction_logs[]
-  vehicle_inventory         vehicle_inventory[]
-  vehicle_logs              vehicle_logs[]
-  vehicle_seats             vehicle_seats[]
-  vehicle_instructions_view vehicle_instructions_view[]
+  id                       String                     @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name                     String                     @db.VarChar(100)
+  abbreviation             String                     @db.VarChar(20)
+  opta                     String?                    @db.VarChar(20)
+  license_plate            String?                    @db.VarChar(20)
+  image                    String?                    @db.VarChar(256)
+  needs_instruction        Boolean?                   @default(false)
+  driver_cab               Boolean                    @default(true)
+  crew_cab                 Boolean                    @default(true)
+  seat_front               Boolean                    @default(true)
+  seat_back                Boolean                    @default(true)
+  G1                       Boolean                    @default(true)
+  G2                       Boolean                    @default(true)
+  G3                       Boolean                    @default(true)
+  G4                       Boolean                    @default(true)
+  G5                       Boolean                    @default(true)
+  G6                       Boolean                    @default(true)
+  back                     Boolean                    @default(true)
+  top                      Boolean                    @default(true)
+  checklists               checklists[]
+  defect_reports           defect_reports[]
+  vehicle_instruction_logs vehicle_instruction_logs[]
+  vehicle_inventory        vehicle_inventory[]
+  vehicle_logs             vehicle_logs[]
+  vehicle_seats            vehicle_seats[]
 }
 
 model vehicle_logs {
@@ -397,16 +331,6 @@ model vehicle_logs {
   @@index([vehicle_id], map: "vehicle_logs_vehicles_id_fk")
 }
 
-model schedules {
-  id         String   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  service_id String   @db.VarChar(36)
-  cron       String   @db.VarChar(30)
-  args       String?  @db.VarChar(255)
-  service    services @relation(fields: [service_id], references: [id], onDelete: Cascade, map: "schedules_services_id_fk")
-
-  @@index([service_id], map: "schedules_services_id_fk")
-}
-
 model food_menus {
   id               String              @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
   price            Float               @db.Float
@@ -415,6 +339,7 @@ model food_menus {
   menu_number      Int?
   shop_key         String              @db.VarChar(100)
   category         food_menus_category
+  dangerous        Boolean             @default(false)
   food_order_shop  food_order_shops    @relation(fields: [shop_key], references: [key], onDelete: Cascade, map: "food_menus_food_order_shops_key_fk")
   food_order_items food_order_items[]
 
@@ -422,153 +347,91 @@ model food_menus {
 }
 
 model food_order_items {
-  id             String                   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  order_id       String                   @db.VarChar(36)
-  menu_id        String                   @db.VarChar(36)
-  member_id      String?                  @db.VarChar(36)
-  member_name    String                   @db.VarChar(100)
-  quantity       Int                      @default(1)
-  price          Float                    @db.Float
-  created_by     String?                  @db.VarChar(36)
-  created_at     DateTime                 @default(now()) @db.Timestamp(0)
-  payment        food_order_items_payment @default(pending)
-  payed_at       String?                  @db.VarChar(36)
-  note           String?                  @db.VarChar(1000)
-  method         food_order_items_method  @default(admin)
-  food_menu      food_menus               @relation(fields: [menu_id], references: [id], map: "food_order_items_food_menus_id_fk")
-  food_order     food_orders              @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "food_order_items_food_orders_id_fk")
-  member         members?                 @relation("food_order_items_member_idTomembers", fields: [member_id], references: [id], map: "food_order_items_members_id_fk")
-  member_created members?                 @relation("food_order_items_created_byTomembers", fields: [created_by], references: [id], map: "food_order_items_members_id_fk_2")
+  id                String                   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  order_id          String                   @db.VarChar(36)
+  menu_id           String                   @db.VarChar(36)
+  member_id         String?                  @db.VarChar(36)
+  member_name       String                   @db.VarChar(100)
+  quantity          Int                      @default(1)
+  price             Float                    @db.Float
+  created_by        String?                  @db.VarChar(36)
+  created_by_entity String?                  @db.VarChar(36)
+  created_at        DateTime                 @default(now()) @db.Timestamp(0)
+  payment           food_order_items_payment @default(pending)
+  payed_at          String?                  @db.VarChar(36)
+  note              String?                  @db.VarChar(1000)
+  method            food_order_items_method  @default(admin)
+  auth_entities     auth_entities?           @relation(fields: [created_by_entity], references: [id], map: "food_order_items___fk")
+  food_menu         food_menus               @relation(fields: [menu_id], references: [id], map: "food_order_items_food_menus_id_fk")
+  food_order        food_orders              @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "food_order_items_food_orders_id_fk")
+  member            members?                 @relation("food_order_items_member_idTomembers", fields: [member_id], references: [id], map: "food_order_items_members_id_fk")
+  member_created    members?                 @relation("food_order_items_created_byTomembers", fields: [created_by], references: [id], map: "food_order_items_members_id_fk_2")
 
   @@index([menu_id], map: "food_order_items_food_menus_id_fk")
   @@index([order_id], map: "food_order_items_food_orders_id_fk")
   @@index([member_id], map: "food_order_items_members_id_fk")
   @@index([created_by], map: "food_order_items_members_id_fk_2")
+  @@index([created_by_entity], map: "food_order_items___fk")
 }
 
 model food_orders {
-  id                     String                   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  date                   DateTime                 @default(dbgenerated("(curdate())")) @db.Date
-  title                  String?                  @db.VarChar(1024)
-  shop_key               String                   @db.VarChar(100)
-  event_id               String?                  @db.VarChar(36)
-  modified_by            String?                  @db.VarChar(36)
-  modified_at            DateTime?                @default(now()) @db.DateTime(0)
-  status                 food_orders_status       @default(open)
-  food_order_items       food_order_items[]
-  food_order_status_logs food_order_status_logs[]
-  event                  events?                  @relation(fields: [event_id], references: [id], map: "food_orders_events_id_fk")
-  food_order_shops       food_order_shops         @relation(fields: [shop_key], references: [key], map: "food_orders_food_order_shops_key_fk")
-  member_modified        members?                 @relation(fields: [modified_by], references: [id], map: "food_orders_members_id_fk")
+  id                        String                     @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  date                      DateTime                   @default(dbgenerated("(curdate())")) @db.Date
+  title                     String?                    @db.VarChar(1024)
+  shop_key                  String                     @db.VarChar(100)
+  event_id                  String?                    @db.VarChar(36)
+  modified_by               String?                    @db.VarChar(36)
+  modified_at               DateTime?                  @default(now()) @db.DateTime(0)
+  status                    food_orders_status         @default(open)
+  paypal_account            String?                    @db.VarChar(36)
+  modified_by_entity        String?                    @db.VarChar(36)
+  food_order_items          food_order_items[]
+  food_order_status_logs    food_order_status_logs[]
+  auth_entities             auth_entities?             @relation(fields: [modified_by_entity], references: [id], map: "food_orders_auth_entities_id_fk")
+  event                     events?                    @relation(fields: [event_id], references: [id], map: "food_orders_events_id_fk")
+  food_order_paypal_account food_order_paypal_account? @relation(fields: [paypal_account], references: [id], map: "food_orders_food_order_paypal_account_id_fk")
+  food_order_shops          food_order_shops           @relation(fields: [shop_key], references: [key], map: "food_orders_food_order_shops_key_fk")
+  member_modified           members?                   @relation(fields: [modified_by], references: [id], map: "food_orders_members_id_fk")
 
   @@index([event_id], map: "food_orders_events_id_fk")
   @@index([modified_by], map: "food_orders_members_id_fk")
   @@index([shop_key], map: "food_orders_food_order_shops_key_fk")
-}
-
-model process_dependencies {
-  process_from_id                                           String    @db.VarChar(36)
-  process_to_id                                             String    @db.VarChar(36)
-  modified_at                                               DateTime  @default(now()) @db.Timestamp(0)
-  modified_by                                               String?   @db.VarChar(36)
-  members                                                   members?  @relation(fields: [modified_by], references: [id], map: "process_dependencies_members_id_fk")
-  processes_process_dependencies_process_from_idToprocesses processes @relation("process_dependencies_process_from_idToprocesses", fields: [process_from_id], references: [id], onDelete: Cascade, map: "process_dependencies_process_id_fk")
-  processes_process_dependencies_process_to_idToprocesses   processes @relation("process_dependencies_process_to_idToprocesses", fields: [process_to_id], references: [id], onDelete: Cascade, map: "process_dependencies_process_id_fk_2")
-
-  @@id([process_to_id, process_from_id])
-  @@index([modified_by], map: "process_dependencies_members_id_fk")
-  @@index([process_from_id], map: "process_dependencies_process_id_fk")
-}
-
-model process_record_jobs {
-  record_id       String          @db.VarChar(36)
-  job_id          String          @db.VarChar(36)
-  jobs            jobs            @relation(fields: [job_id], references: [id], onDelete: Cascade, map: "process_instance_job_jobs_id_fk")
-  process_records process_records @relation(fields: [record_id], references: [id], onDelete: Cascade, map: "process_instance_job_process_instance_id_fk")
-
-  @@id([record_id, job_id])
-  @@index([job_id], map: "process_instance_job_jobs_id_fk")
-}
-
-model process_records {
-  id                  String                 @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  process_id          String                 @db.VarChar(36)
-  member_id           String                 @db.VarChar(36)
-  status              process_records_status
-  created_at          DateTime               @default(now()) @db.Timestamp(0)
-  updated_at          DateTime               @default(now()) @db.Timestamp(0)
-  process_record_jobs process_record_jobs[]
-  members             members                @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "process_instance_members_id_fk")
-  processes           processes              @relation(fields: [process_id], references: [id], onDelete: Cascade, map: "process_instance_process_id_fk")
-
-  @@unique([process_id, member_id], map: "process_instance_pk_2")
-  @@index([member_id], map: "process_instance_members_id_fk")
-}
-
-model processes {
-  id                                                                   String                 @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  name                                                                 String                 @db.VarChar(200)
-  description                                                          String?                @db.Text
-  type                                                                 processes_type
-  service_id                                                           String?                @db.VarChar(36)
-  service_args                                                         String?                @db.Text
-  cron                                                                 String?                @db.VarChar(40)
-  modified_by                                                          String?                @db.VarChar(36)
-  modified_at                                                          DateTime?              @default(now()) @db.Timestamp(0)
-  active                                                               Boolean                @default(true)
-  process_dependencies_process_dependencies_process_from_idToprocesses process_dependencies[] @relation("process_dependencies_process_from_idToprocesses")
-  process_dependencies_process_dependencies_process_to_idToprocesses   process_dependencies[] @relation("process_dependencies_process_to_idToprocesses")
-  process_records                                                      process_records[]
-  members                                                              members?               @relation(fields: [modified_by], references: [id], map: "process_members_id_fk")
-  services                                                             services?              @relation(fields: [service_id], references: [id], map: "process_services_id_fk")
-
-  @@index([modified_by], map: "process_members_id_fk")
-  @@index([service_id], map: "process_services_id_fk")
+  @@index([modified_by_entity], map: "food_orders_auth_entities_id_fk")
+  @@index([paypal_account], map: "food_orders_food_order_paypal_account_id_fk")
 }
 
 model food_order_status_logs {
-  id              String                        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  order_id        String                        @db.VarChar(36)
-  status          food_order_status_logs_status
-  timestamp       DateTime                      @default(now()) @db.DateTime(0)
-  modified_by     String?                       @db.VarChar(36)
-  food_order      food_orders                   @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "food_order_status_food_orders_id_fk")
-  member_modified members?                      @relation(fields: [modified_by], references: [id], map: "food_order_status_members_id_fk")
+  id                 String                        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  order_id           String                        @db.VarChar(36)
+  status             food_order_status_logs_status
+  timestamp          DateTime                      @default(now()) @db.DateTime(0)
+  modified_by_entity String                        @db.VarChar(36)
+  food_order         food_orders                   @relation(fields: [order_id], references: [id], onDelete: Cascade, map: "food_order_status_food_orders_id_fk")
+  auth_entities      auth_entities                 @relation(fields: [modified_by_entity], references: [id], map: "food_order_status_logs_auth_entities_id_fk")
 
   @@index([order_id], map: "food_order_status_food_orders_id_fk")
-  @@index([modified_by], map: "food_order_status_members_id_fk")
+  @@index([modified_by_entity], map: "food_order_status_logs_auth_entities_id_fk")
 }
 
 model food_order_shops {
   key         String        @id @db.VarChar(100)
   name        String        @db.VarChar(200)
+  phone       String?       @db.VarChar(30)
   food_menus  food_menus[]
   food_orders food_orders[]
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model nameplate_prints {
-  id                                           String   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  member_id                                    String   @db.VarChar(36)
-  created_by                                   String?  @db.VarChar(36)
-  created_at                                   DateTime @default(now()) @db.DateTime(0)
-  members_nameplate_prints_member_idTomembers  members  @relation("nameplate_prints_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "nametag_prints_members_id_fk")
-  members_nameplate_prints_created_byTomembers members? @relation("nameplate_prints_created_byTomembers", fields: [created_by], references: [id], map: "nametag_prints_members_id_fk_2")
+  id                                          String        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  member_id                                   String        @db.VarChar(36)
+  created_at                                  DateTime      @default(now()) @db.DateTime(0)
+  created_by_entity_id                        String        @db.VarChar(36)
+  auth_entities                               auth_entities @relation(fields: [created_by_entity_id], references: [id], map: "nameplate_prints_auth_entities_id_fk")
+  members_nameplate_prints_member_idTomembers members       @relation("nameplate_prints_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "nametag_prints_members_id_fk")
 
   @@index([member_id], map: "nametag_prints_members_id_fk")
-  @@index([created_by], map: "nametag_prints_members_id_fk_2")
-}
-
-model member_auth {
-  member_id                                String   @id @db.VarChar(36)
-  username                                 String   @unique(map: "member_auth_pk_2") @db.VarChar(100)
-  auth_hash                                String   @db.VarChar(256)
-  modiified_at                             DateTime @default(now()) @db.DateTime(0)
-  modified_by                              String?  @db.VarChar(36)
-  members_member_auth_member_idTomembers   members  @relation("member_auth_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "member_auth_members_id_fk")
-  members_member_auth_modified_byTomembers members? @relation("member_auth_modified_byTomembers", fields: [modified_by], references: [id], map: "member_auth_members_id_fk_2")
-
-  @@index([modified_by], map: "member_auth_members_id_fk_2")
+  @@index([created_by_entity_id], map: "nametag_prints_auth_entities_id_fk")
 }
 
 model jf_clothes {
@@ -589,7 +452,6 @@ model jf_clothes {
   member_created        members?                  @relation(fields: [created_by], references: [id], map: "jf_clothes_members_id_fk")
   jf_clothes_state_logs jf_clothes_state_logs[]
   transactions          jf_clothes_transactions[]
-  clothes_view          clothes_view[]
 
   @@index([parent_id], map: "jf_clothes_jf_clothes_id_fk")
   @@index([clothes_type_id], map: "jf_clothes_jf_clothes_types_id_fk")
@@ -606,7 +468,6 @@ model jf_clothes_transactions {
   cloth          jf_clothes                   @relation(fields: [cloth_id], references: [id], onDelete: Cascade, map: "jf_clothes_transactions_jf_clothes_id_fk")
   member         members                      @relation("jf_clothes_transactions_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "jf_clothes_transactions_members_id_fk")
   member_created members?                     @relation("jf_clothes_transactions_created_byTomembers", fields: [created_by], references: [id], map: "jf_clothes_transactions_members_id_fk_2")
-  clothes_view   clothes_view[]
 
   @@index([cloth_id], map: "jf_clothes_transactions_jf_clothes_id_fk")
   @@index([member_id], map: "jf_clothes_transactions_members_id_fk")
@@ -614,25 +475,17 @@ model jf_clothes_transactions {
 }
 
 model jf_clothes_types {
-  id           String             @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  parent_id    String?            @db.VarChar(36)
-  abbrev       String             @unique(map: "jf_clothes_type_pk_2") @db.VarChar(10)
-  name         String             @db.VarChar(50)
-  icon         String?            @db.VarChar(40)
-  printable    Boolean            @default(false)
-  jf_clothes   jf_clothes[]
-  parent_type  jf_clothes_types?  @relation("jf_clothes_typesTojf_clothes_types", fields: [parent_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "jf_clothes_type_jf_clothes_type_id_fk")
-  subtypes     jf_clothes_types[] @relation("jf_clothes_typesTojf_clothes_types")
-  clothes_view clothes_view[]
+  id          String             @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  parent_id   String?            @db.VarChar(36)
+  abbrev      String             @unique(map: "jf_clothes_type_pk_2") @db.VarChar(10)
+  name        String             @db.VarChar(50)
+  icon        String?            @db.VarChar(40)
+  printable   Boolean            @default(false)
+  jf_clothes  jf_clothes[]
+  parent_type jf_clothes_types?  @relation("jf_clothes_typesTojf_clothes_types", fields: [parent_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "jf_clothes_type_jf_clothes_type_id_fk")
+  subtypes    jf_clothes_types[] @relation("jf_clothes_typesTojf_clothes_types")
 
   @@index([parent_id], map: "jf_clothes_type_jf_clothes_type_id_fk")
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model tasks {
-  id Unsupported("uuid()") @id @default(dbgenerated("(uuid())"))
-
-  @@ignore
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -671,9 +524,10 @@ model jf_member_contacts {
   email      String?                 @db.VarChar(50)
   comment    String?                 @db.Text
   type       jf_member_contacts_type
+  whatsapp   Boolean?
   member     members                 @relation("jf_member_contactsTojf_member_contacts", fields: [member_id], references: [id], onDelete: Cascade, map: "jf_member_contacts_jf_member_contacts_id_fk")
 
-  @@index([member_id], map: "jf_member_contacts_members_id_fk")
+  @@index([member_id], map: "jf_member_contacts_jf_member_contacts_id_fk")
 }
 
 model shop_vendor_orders {
@@ -771,16 +625,16 @@ model vehicle_seats {
 }
 
 model jf_clothes_state_logs {
-  id            String                      @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  cloth_id      String                      @db.VarChar(36)
-  state         jf_clothes_state_logs_state
-  timestamp     DateTime                    @default(now()) @db.DateTime(0)
-  edited_by     String?                     @db.VarChar(36)
-  jf_clothes    jf_clothes                  @relation(fields: [cloth_id], references: [id], onDelete: Cascade, map: "jf_clothes_state_logs_jf_clothes_id_fk")
-  member_edited members?                    @relation(fields: [edited_by], references: [id], map: "jf_clothes_state_logs_members_id_fk")
+  id                  String                      @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  cloth_id            String                      @db.VarChar(36)
+  state               jf_clothes_state_logs_state
+  timestamp           DateTime                    @default(now()) @db.DateTime(0)
+  edited_by_entity_id String                      @db.VarChar(36)
+  auth_entities       auth_entities               @relation(fields: [edited_by_entity_id], references: [id], map: "jf_clothes_state_logs_auth_entities_id_fk")
+  jf_clothes          jf_clothes                  @relation(fields: [cloth_id], references: [id], onDelete: Cascade, map: "jf_clothes_state_logs_jf_clothes_id_fk")
 
   @@index([cloth_id], map: "jf_clothes_state_logs_jf_clothes_id_fk")
-  @@index([edited_by], map: "jf_clothes_state_logs_members_id_fk")
+  @@index([edited_by_entity_id], map: "jf_clothes_state_logs_auth_entities_id_fk")
 }
 
 model event_responsibles {
@@ -794,278 +648,1001 @@ model event_responsibles {
 }
 
 model vehicle_instruction_logs {
-  id                                                   String    @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  vehicle_id                                           String    @db.VarChar(36)
-  member_id                                            String    @db.VarChar(36)
-  created_at                                           DateTime  @default(now()) @db.DateTime(0)
-  created_by                                           String?   @db.VarChar(36)
-  instructed                                           Boolean   @default(true)
-  suspended_until                                      DateTime? @db.Date
-  members_vehicle_instruction_logs_member_idTomembers  members   @relation("vehicle_instruction_logs_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "vehicle_instruction_logs_members_id_fk")
-  members_vehicle_instruction_logs_created_byTomembers members?  @relation("vehicle_instruction_logs_created_byTomembers", fields: [created_by], references: [id], map: "vehicle_instruction_logs_members_id_fk_2")
-  vehicles                                             vehicles  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, map: "vehicle_instruction_logs_vehicles_id_fk")
+  id                                                  String        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  vehicle_id                                          String        @db.VarChar(36)
+  member_id                                           String        @db.VarChar(36)
+  created_at                                          DateTime      @default(now()) @db.DateTime(0)
+  instructed                                          Boolean       @default(true)
+  suspended_until                                     DateTime?     @db.Date
+  created_by_entity_id                                String        @db.VarChar(36)
+  auth_entities                                       auth_entities @relation(fields: [created_by_entity_id], references: [id], map: "vehicle_instruction_logs_auth_entities_id_fk")
+  members_vehicle_instruction_logs_member_idTomembers members       @relation("vehicle_instruction_logs_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "vehicle_instruction_logs_members_id_fk")
+  vehicles                                            vehicles      @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, map: "vehicle_instruction_logs_vehicles_id_fk")
 
   @@index([member_id], map: "vehicle_instruction_logs_members_id_fk")
-  @@index([created_by], map: "vehicle_instruction_logs_members_id_fk_2")
   @@index([vehicle_id], map: "vehicle_instruction_logs_vehicles_id_fk")
+  @@index([created_by_entity_id], map: "vehicle_instruction_logs_auth_entities_id_fk")
 }
 
 model member_training_logs {
-  id                                               String                      @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  member_id                                        String                      @db.VarChar(36)
-  training_id                                      String                      @db.VarChar(36)
-  status                                           member_training_logs_status
-  timestamp                                        DateTime                    @default(now()) @db.DateTime(0)
-  created_by                                       String?                     @db.VarChar(36)
-  expiration                                       DateTime?                   @db.Date
-  source                                           member_training_logs_source
-  members_member_training_logs_created_byTomembers members?                    @relation("member_training_logs_created_byTomembers", fields: [created_by], references: [id], map: "member_training_logs_members_id_fk")
-  members_member_training_logs_member_idTomembers  members                     @relation("member_training_logs_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "member_trainings_member_fk")
-  trainings                                        trainings                   @relation(fields: [training_id], references: [id], onDelete: Cascade, map: "member_trainings_training_fk")
+  id                                              String                      @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  member_id                                       String                      @db.VarChar(36)
+  training_id                                     String                      @db.VarChar(36)
+  status                                          member_training_logs_status
+  timestamp                                       DateTime                    @default(now()) @db.DateTime(0)
+  entity_created_id                               String                      @db.VarChar(36)
+  expiration                                      DateTime?                   @db.Date
+  source                                          member_training_logs_source
+  auth_entities                                   auth_entities               @relation(fields: [entity_created_id], references: [id], map: "member_training_logs_auth_entities_id_fk")
+  members_member_training_logs_member_idTomembers members                     @relation("member_training_logs_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "member_trainings_member_fk")
+  trainings                                       trainings                   @relation(fields: [training_id], references: [id], onDelete: Cascade, map: "member_trainings_training_fk")
 
-  @@index([created_by], map: "member_training_logs_members_id_fk")
   @@index([member_id], map: "member_trainings_member_fk")
   @@index([training_id], map: "member_trainings_training_fk")
+  @@index([entity_created_id], map: "member_training_logs_auth_entities_id_fk")
 }
 
 model group_member_logs {
-  id                                            String   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  group_id                                      String   @db.VarChar(36)
-  member_id                                     String   @db.VarChar(36)
-  timestamp                                     DateTime @default(now()) @db.DateTime(0)
-  created_by                                    String?  @db.VarChar(36)
-  member                                        Boolean  @default(true)
-  groups                                        groups   @relation(fields: [group_id], references: [id], onDelete: Cascade, map: "group_members_group_fk")
-  members_group_member_logs_member_idTomembers  members  @relation("group_member_logs_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "group_members_member_fk")
-  members_group_member_logs_created_byTomembers members? @relation("group_member_logs_created_byTomembers", fields: [created_by], references: [id], map: "group_members_added_fk")
+  id                                           String        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  group_id                                     String        @db.VarChar(36)
+  member_id                                    String        @db.VarChar(36)
+  timestamp                                    DateTime      @default(now()) @db.DateTime(0)
+  member                                       Boolean       @default(true)
+  created_by_entity_id                         String        @db.VarChar(36)
+  auth_entities                                auth_entities @relation(fields: [created_by_entity_id], references: [id], map: "group_member_logs_auth_entities_id_fk")
+  groups                                       groups        @relation(fields: [group_id], references: [id], onDelete: Cascade, map: "group_members_group_fk")
+  members_group_member_logs_member_idTomembers members       @relation("group_member_logs_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "group_members_member_fk")
 
-  @@index([created_by], map: "group_members_added_fk")
   @@index([group_id], map: "group_member_logs_groups_id_fk")
   @@index([member_id], map: "group_member_logs_members_id_fk")
+  @@index([created_by_entity_id], map: "group_member_logs_auth_entities_id_fk")
 }
 
 model member_attribute_logs {
-  id             String                       @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  member_id      String                       @db.VarChar(36)
-  key            member_attribute_logs_key
-  value          String?                      @db.VarChar(255)
-  source         member_attribute_logs_source
-  timestamp      DateTime                     @default(now()) @db.DateTime(0)
-  created_by     String?                      @db.VarChar(36)
-  member         members                      @relation("member_attribute_logs_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "member_attribute_logs_members_id_fk")
-  member_created members?                     @relation("member_attribute_logs_created_byTomembers", fields: [created_by], references: [id], map: "member_attribute_logs_members_id_fk_2")
+  id                String                       @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  member_id         String                       @db.VarChar(36)
+  key               member_attribute_logs_key
+  value             String?                      @db.VarChar(255)
+  source            member_attribute_logs_source
+  timestamp         DateTime                     @default(now()) @db.DateTime(0)
+  entity_created_id String                       @db.VarChar(36)
+  auth_entities     auth_entities                @relation(fields: [entity_created_id], references: [id], map: "member_attribute_logs_auth_entities_id_fk")
+  member            members                      @relation("member_attribute_logs_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "member_attribute_logs_members_id_fk")
 
-  @@index([created_by], map: "member_attributes_author_fk")
   @@index([member_id], map: "member_attributes_member_fk")
+  @@index([entity_created_id], map: "member_attribute_logs_auth_entities_id_fk")
 }
 
 model api_auth {
-  id          String  @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  username    String  @unique(map: "api_auth_pk") @db.VarChar(200)
-  password    String  @db.VarChar(200)
-  application String? @db.VarChar(200)
+  id                String              @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  username          String              @unique(map: "api_auth_pk") @db.VarChar(256)
+  password          String              @db.VarChar(256)
+  application       String?             @db.VarChar(200)
+  description       String?             @db.Text
+  created_by        String?             @db.VarChar(36)
+  created_at        DateTime            @default(now()) @db.DateTime(0)
+  members           members?            @relation(fields: [created_by], references: [id], map: "api_auth_members_id_fk")
+  auth_api_profiles auth_api_profiles[]
+  auth_entities     auth_entities?
+
+  @@index([created_by], map: "api_auth_members_id_fk")
 }
 
 model ff_clothes {
   id                     String                   @unique(map: "ff_clothes_pk") @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  category               String?                  @db.VarChar(100)
-  type                   String?                  @db.VarChar(100)
+  category               String                   @db.VarChar(100)
+  type                   String                   @db.VarChar(100)
   name                   String?                  @db.VarChar(100)
   size                   String?                  @db.VarChar(20)
   ff_member_clothes_logs ff_member_clothes_logs[]
-  ff_clothes_view        ff_clothes_view[]
 }
 
 model ff_member_clothes_logs {
-  id            String     @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  cloth_id      String     @db.VarChar(36)
-  member_id     String     @db.VarChar(36)
-  timestamp     DateTime   @default(now()) @db.DateTime(0)
-  direction_out Boolean    @default(true)
-  ff_cloth      ff_clothes @relation(fields: [cloth_id], references: [id], onDelete: Cascade, map: "ff_member_clothes_logs_ff_clothes_id_fk")
-  member        members    @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "ff_member_clothes_logs_members_id_fk")
+  id                   String        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  cloth_id             String        @db.VarChar(36)
+  member_id            String?       @db.VarChar(36)
+  timestamp            DateTime      @default(now()) @db.DateTime(0)
+  changed_by_entity_id String        @db.VarChar(36)
+  auth_entities        auth_entities @relation(fields: [changed_by_entity_id], references: [id], map: "ff_member_clothes_logs_auth_entities_id_fk")
+  ff_cloth             ff_clothes    @relation(fields: [cloth_id], references: [id], onDelete: Cascade, map: "ff_member_clothes_logs_ff_clothes_id_fk")
+  member               members?      @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "ff_member_clothes_logs_members_id_fk")
 
   @@index([cloth_id], map: "ff_member_clothes_logs_ff_clothes_id_fk")
   @@index([member_id], map: "ff_member_clothes_logs_members_id_fk")
+  @@index([changed_by_entity_id], map: "ff_member_clothes_logs_auth_entities_id_fk")
 }
 
-view job_metrics {
-  id           String              @unique @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  service_id   String              @db.VarChar(36)
-  status       job_metrics_status?
-  args         String?             @db.VarChar(255)
-  queued       DateTime            @default(now()) @db.DateTime(0)
-  started      DateTime?           @db.DateTime(0)
-  finished     DateTime?           @db.DateTime(0)
-  queued_by    String?             @db.VarChar(36)
-  waited       BigInt?
-  duration     BigInt?
-  service_key  String              @db.VarChar(256)
-  service_name String?             @db.VarChar(256)
-  member       members?            @relation(fields: [queued_by], references: [id])
-  service      services            @relation(fields: [service_id], references: [id], onDelete: Cascade)
+model auth_api_profiles {
+  api_id          String        @db.VarChar(36)
+  auth_profile_id String        @db.VarChar(36)
+  api_auth        api_auth      @relation(fields: [api_id], references: [id], onDelete: Cascade, map: "auth_api_profiles_api_auth_id_fk")
+  auth_profiles   auth_profiles @relation(fields: [auth_profile_id], references: [id], onDelete: Cascade, map: "auth_api_profiles_auth_profiles_id_fk")
+
+  @@id([auth_profile_id, api_id])
+  @@index([api_id], map: "auth_api_profiles_api_auth_id_fk")
 }
 
-view food_order_member_stats {
-  id              String                          @unique @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  first_name      String                          @db.VarChar(255)
-  last_name       String                          @db.VarChar(255)
-  personnel_nr    Int?
-  gender          food_order_member_stats_gender?
-  total_positions BigInt                          @default(0)
-  total_orders    BigInt                          @default(0)
-  total_spent     Float?
+model auth_device_profiles {
+  auth_profile_id      String               @db.VarChar(36)
+  device_id            String               @db.VarChar(36)
+  auth_profiles        auth_profiles        @relation(fields: [auth_profile_id], references: [id], onDelete: Cascade, map: "auth_device_profiles_auth_profiles_id_fk")
+  auth_trusted_devices auth_trusted_devices @relation(fields: [device_id], references: [id], onDelete: Cascade, map: "auth_device_profiles_auth_trusted_devices_id_fk")
+
+  @@id([auth_profile_id, device_id])
+  @@index([device_id], map: "auth_device_profiles_device_id_index")
 }
 
-view food_order_menu_stats {
-  id            String                         @unique @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  price         Float                          @db.Float
-  name          String                         @db.VarChar(255)
-  description   String?                        @db.VarChar(255)
-  menu_number   Int?
-  shop_key      String                         @db.VarChar(100)
-  category      food_order_menu_stats_category
-  total_ordered BigInt?
+model auth_entities {
+  id                                                                                      String                       @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  member_id                                                                               String?                      @unique(map: "auth_entity_pk_2") @db.VarChar(36)
+  group_id                                                                                String?                      @unique(map: "auth_entity_pk_3") @db.VarChar(36)
+  api_access_id                                                                           String?                      @unique(map: "auth_entity_pk_4") @db.VarChar(36)
+  device_id                                                                               String?                      @unique(map: "auth_entities_pk") @db.VarChar(36)
+  profile_id                                                                              String?                      @unique(map: "auth_entities_pk_2") @db.VarChar(36)
+  fallback_title                                                                          String?                      @db.VarChar(100)
+  api_auth                                                                                api_auth?                    @relation(fields: [api_access_id], references: [id], map: "auth_entities_api_auth_id_fk")
+  auth_profiles                                                                           auth_profiles?               @relation(fields: [profile_id], references: [id], onDelete: Cascade, map: "auth_entities_auth_profiles_id_fk")
+  auth_trusted_devices                                                                    auth_trusted_devices?        @relation(fields: [device_id], references: [id], map: "auth_entities_auth_trusted_devices_id_fk")
+  groups                                                                                  groups?                      @relation(fields: [group_id], references: [id], onDelete: Cascade, map: "auth_entities_groups_id_fk")
+  members_auth_entities_member_idTomembers                                                members?                     @relation("auth_entities_member_idTomembers", fields: [member_id], references: [id], map: "auth_entities_members_id_fk")
+  auth_entity_permissions                                                                 auth_entity_permissions[]
+  auth_logs                                                                               auth_logs[]
+  checklists_checklists_created_by_entity_idToauth_entities                               checklists[]                 @relation("checklists_created_by_entity_idToauth_entities")
+  checklists_checklists_modified_by_entity_idToauth_entities                              checklists[]                 @relation("checklists_modified_by_entity_idToauth_entities")
+  checklists_executions                                                                   checklists_executions[]
+  checklists_item_executions                                                              checklists_item_executions[]
+  defect_report_status_logs                                                               defect_report_status_logs[]
+  defect_reports_defect_reports_created_by_entity_idToauth_entities                       defect_reports[]             @relation("defect_reports_created_by_entity_idToauth_entities")
+  defect_reports_defect_reports_modified_by_entity_idToauth_entities                      defect_reports[]             @relation("defect_reports_modified_by_entity_idToauth_entities")
+  divera_event_profile                                                                    divera_event_profile[]
+  drinks                                                                                  drinks[]
+  drinks_bookings                                                                         drinks_bookings[]
+  drinks_invoice                                                                          drinks_invoice[]
+  drinks_invoice_item                                                                     drinks_invoice_item[]
+  event_planning_sessions                                                                 event_planning_sessions[]
+  events                                                                                  events[]
+  feueron_member_mappings_feueron_member_mappings_created_by_entity_idToauth_entities     feueron_member_mappings[]    @relation("feueron_member_mappings_created_by_entity_idToauth_entities")
+  feueron_member_mappings_feueron_member_mappings_mapped_by_entity_idToauth_entities      feueron_member_mappings[]    @relation("feueron_member_mappings_mapped_by_entity_idToauth_entities")
+  feueron_training_mappings_feueron_training_mappings_created_by_entity_idToauth_entities feueron_training_mappings[]  @relation("feueron_training_mappings_created_by_entity_idToauth_entities")
+  feueron_training_mappings_feueron_training_mappings_mapped_by_entity_idToauth_entities  feueron_training_mappings[]  @relation("feueron_training_mappings_mapped_by_entity_idToauth_entities")
+  ff_member_clothes_logs                                                                  ff_member_clothes_logs[]
+  food_order_items                                                                        food_order_items[]
+  food_order_status_logs                                                                  food_order_status_logs[]
+  food_orders                                                                             food_orders[]
+  group_member_logs                                                                       group_member_logs[]
+  jf_clothes_state_logs                                                                   jf_clothes_state_logs[]
+  jobs_runs                                                                               jobs_runs[]
+  lockers                                                                                 lockers[]
+  member_attribute_logs                                                                   member_attribute_logs[]
+  member_training_logs                                                                    member_training_logs[]
+  members_members_entity_created_idToauth_entities                                        members[]                    @relation("members_entity_created_idToauth_entities")
+  nameplate_prints                                                                        nameplate_prints[]
+  pager                                                                                   pager[]
+  pager_history                                                                           pager_history[]
+  ticket_assignments                                                                      ticket_assignments[]
+  ticket_board_entities_ticket_board_entities_created_by_entity_idToauth_entities         ticket_board_entities[]      @relation("ticket_board_entities_created_by_entity_idToauth_entities")
+  ticket_board_entities_ticket_board_entities_auth_entity_idToauth_entities               ticket_board_entities[]      @relation("ticket_board_entities_auth_entity_idToauth_entities")
+  ticket_boards                                                                           ticket_boards[]
+  ticket_comments                                                                         ticket_comments[]
+  ticket_files                                                                            ticket_files[]
+  ticket_logs                                                                             ticket_logs[]
+  tickets_tickets_completed_by_entity_idToauth_entities                                   tickets[]                    @relation("tickets_completed_by_entity_idToauth_entities")
+  tickets_tickets_created_by_entity_idToauth_entities                                     tickets[]                    @relation("tickets_created_by_entity_idToauth_entities")
+  tickets_tickets_modified_by_entity_idToauth_entities                                    tickets[]                    @relation("tickets_modified_by_entity_idToauth_entities")
+  vehicle_instruction_logs                                                                vehicle_instruction_logs[]
 }
 
-view clothes_view {
-  id              String                   @unique @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  parent_id       String?                  @db.VarChar(36)
-  key             String                   @unique @db.VarChar(20)
-  clothes_type_id String                   @db.VarChar(36)
-  size            String?                  @db.VarChar(10)
-  note            String?                  @db.VarChar(100)
-  condition       Int                      @default(5)
-  owner           clothes_view_owner       @default(of_56)
-  print           Boolean                  @default(false)
-  created_at      DateTime                 @default(now()) @db.Timestamp(0)
-  created_by      String?                  @db.VarChar(36)
-  member_id       String?                  @db.VarChar(36)
-  transaction_id  String?                  @db.VarChar(36)
-  state           String?                  @db.VarChar(8)
-  transaction     jf_clothes_transactions? @relation(fields: [transaction_id], references: [id])
-  cloth_type      jf_clothes_types         @relation(fields: [clothes_type_id], references: [id])
-  parent_cloth    jf_clothes?              @relation(fields: [parent_id], references: [id])
-  member          members?                 @relation("clothes_view_assigned_member", fields: [member_id], references: [id])
-  member_created  members?                 @relation("clothes_view_createdByMember", fields: [created_by], references: [id])
+model auth_entity_permissions {
+  permission_id  String        @db.VarChar(36)
+  auth_entity_id String        @db.VarChar(36)
+  read           Boolean
+  create         Boolean
+  update         Boolean
+  delete         Boolean
+  auth_entities  auth_entities @relation(fields: [auth_entity_id], references: [id], onDelete: Cascade, map: "auth_entity_permissions_permission_entity_id_fk")
+  permissions    permissions   @relation(fields: [permission_id], references: [id], onDelete: Cascade, map: "auth_entity_permissions_permissions_id_fk")
+
+  @@id([auth_entity_id, permission_id])
+  @@index([permission_id], map: "auth_entity_permissions_permissions_id_fk")
 }
 
-/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-view member_presence_view {
-  id                 String                           @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  first_name         String                           @db.VarChar(255)
-  last_name          String                           @db.VarChar(255)
-  personnel_nr       Int?
-  gender             member_presence_view_gender?
-  image_url          String?                          @db.VarChar(500)
-  department         member_presence_view_department?
-  presence_timestamp DateTime?                        @default(now()) @db.Timestamp(0)
-  present            Int?
-  seat_id            String?                          @db.VarChar(36)
-
-  @@ignore
+model auth_hash {
+  member_id String           @id @db.VarChar(36)
+  hash      String?          @db.VarChar(255)
+  method    auth_hash_method
+  timestamp DateTime         @default(now()) @db.DateTime(0)
+  expiresAt DateTime         @default(dbgenerated("(current_timestamp() + interval 1 day)")) @db.DateTime(0)
+  members   members          @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "auth_hash_members_id_fk")
 }
 
-view vehicle_instructions_view {
-  id              String    @unique @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  vehicle_id      String    @db.VarChar(36)
-  member_id       String    @db.VarChar(36)
-  created_at      DateTime  @default(now()) @db.DateTime(0)
-  created_by      String?   @db.VarChar(36)
-  suspended_until DateTime? @db.Date
-  member          members   @relation("vehicle_instructions_view_member_idTomembers", fields: [member_id], references: [id])
-  vehicle         vehicles  @relation(fields: [vehicle_id], references: [id])
-  member_created  members?  @relation("vehicle_instructions_view_created_byTomembers", fields: [created_by], references: [id])
+model auth_logs {
+  id             String           @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  auth_entity_id String?          @db.VarChar(36)
+  timestamp      DateTime         @default(now()) @db.DateTime(0)
+  username       String?          @db.VarChar(250)
+  status         auth_logs_status
+  auth_entities  auth_entities?   @relation(fields: [auth_entity_id], references: [id], onDelete: Cascade, map: "auth_logs_auth_entities_id_fk")
+
+  @@index([auth_entity_id], map: "auth_logs_auth_entities_id_fk")
 }
 
-view member_trainings_view {
-  id             String                       @unique @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  member_id      String                       @db.VarChar(36)
-  training_id    String                       @db.VarChar(36)
-  status         member_trainings_view_status
-  timestamp      DateTime                     @default(now()) @db.DateTime(0)
-  created_by     String?                      @db.VarChar(36)
-  expiration     DateTime?                    @db.Date
-  source         member_trainings_view_source
-  member         members                      @relation("member_trainings_view_member_idTomembers", fields: [member_id], references: [id])
-  member_created members?                     @relation("member_trainings_view_created_byTomembers", fields: [created_by], references: [id])
-  training       trainings                    @relation(fields: [training_id], references: [id])
+model auth_profiles {
+  id                   String                 @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name                 String                 @db.VarChar(100)
+  description          String?                @db.VarChar(1024)
+  created_at           DateTime               @default(now()) @db.DateTime(0)
+  created_by           String?                @db.VarChar(36)
+  auth_api_profiles    auth_api_profiles[]
+  auth_device_profiles auth_device_profiles[]
+  auth_entities        auth_entities?
+  members              members?               @relation(fields: [created_by], references: [id], map: "auth_profiles_members_id_fk")
+
+  @@index([created_by], map: "auth_profiles_created_by_index")
 }
 
-view group_members_view {
-  id             String   @unique @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  group_id       String   @db.VarChar(36)
-  member_id      String   @db.VarChar(36)
-  timestamp      DateTime @default(now()) @db.DateTime(0)
-  created_by     String?  @db.VarChar(36)
-  member         members  @relation("group_members_view_member_idTomembers", fields: [member_id], references: [id])
-  member_created members? @relation("group_members_view_created_byTomembers", fields: [created_by], references: [id])
-  group          groups   @relation(fields: [group_id], references: [id])
+model auth_trusted_devices {
+  id                   String                 @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name                 String                 @db.VarChar(100)
+  description          String?                @db.VarChar(1024)
+  hash                 String                 @db.VarChar(255)
+  created_at           DateTime               @default(now()) @db.DateTime(0)
+  created_by           String?                @db.VarChar(36)
+  auth_device_profiles auth_device_profiles[]
+  auth_entities        auth_entities?
+  members              members?               @relation(fields: [created_by], references: [id], map: "auth_trusted_devices_members_id_fk")
+
+  @@index([created_by], map: "auth_trusted_devices_members_id_fk")
 }
 
-view members_view {
-  id             String  @unique @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  first_name     String? @db.VarChar(255)
-  last_name      String? @db.VarChar(255)
-  personnel_nr   String? @db.VarChar(255)
-  birthdate      String? @db.VarChar(255)
-  gender         String? @db.VarChar(255)
-  dienstgrad     String? @db.VarChar(255)
-  department     String? @db.VarChar(255)
-  image_url      String? @db.VarChar(255)
-  divera_id      String? @db.VarChar(255)
-  feueron_id     String? @db.VarChar(255)
-  iserv_username String? @db.VarChar(255)
-  status         String? @db.VarChar(255)
-  member         members @relation(fields: [id], references: [id])
+model checklists {
+  id                                                            String                  @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name                                                          String                  @db.VarChar(255)
+  description                                                   String?                 @db.Text
+  vehicle_id                                                    String?                 @db.VarChar(36)
+  created_at                                                    DateTime                @default(now()) @db.DateTime(0)
+  created_by_entity_id                                          String?                 @db.VarChar(36)
+  modified_at                                                   DateTime                @default(now()) @db.DateTime(0)
+  modified_by_entity_id                                         String?                 @db.VarChar(36)
+  auth_entities_checklists_created_by_entity_idToauth_entities  auth_entities?          @relation("checklists_created_by_entity_idToauth_entities", fields: [created_by_entity_id], references: [id], map: "fk_chk_created_by")
+  auth_entities_checklists_modified_by_entity_idToauth_entities auth_entities?          @relation("checklists_modified_by_entity_idToauth_entities", fields: [modified_by_entity_id], references: [id], map: "fk_chk_modified_by")
+  vehicles                                                      vehicles?               @relation(fields: [vehicle_id], references: [id], map: "fk_chk_vehicle")
+  checklists_categories                                         checklists_categories[]
+  checklists_executions                                         checklists_executions[]
+
+  @@index([created_by_entity_id], map: "idx_chk_created_by")
+  @@index([modified_by_entity_id], map: "idx_chk_modified_by")
+  @@index([vehicle_id], map: "idx_chk_vehicle")
 }
 
-view member_attributes_view {
-  id             String                        @unique @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  member_id      String                        @db.VarChar(36)
-  key            member_attributes_view_key
-  value          String?                       @db.VarChar(255)
-  timestamp      DateTime                      @default(now()) @db.DateTime(0)
-  source         member_attributes_view_source
-  created_by     String?                       @db.VarChar(36)
-  member         members                       @relation("member_attributes_view_member_idTomembers", fields: [member_id], references: [id])
-  member_created members?                      @relation("member_attributes_view_created_byTomembers", fields: [created_by], references: [id])
+model checklists_categories {
+  id               String             @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  checklist_id     String             @db.VarChar(36)
+  name             String             @db.VarChar(255)
+  order_index      Int                @default(0)
+  checklists       checklists         @relation(fields: [checklist_id], references: [id], onDelete: Cascade, map: "fk_ch_cat_checklist")
+  checklists_items checklists_items[]
+
+  @@index([checklist_id], map: "idx_ch_cat_checklist")
 }
 
-view member_search_view {
-  id           String  @unique @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  first_name   String  @db.VarChar(255)
-  last_name    String  @db.VarChar(255)
-  personnel_nr Int?
-  text         String? @db.Text
+model checklists_execution_members {
+  execution_id          String                @db.VarChar(36)
+  member_id             String                @db.VarChar(36)
+  checklists_executions checklists_executions @relation(fields: [execution_id], references: [id], onDelete: Cascade, map: "fk_ch_exec_member_exec")
+  members               members               @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "fk_ch_exec_member_member")
+
+  @@id([execution_id, member_id])
+  @@index([member_id], map: "idx_ch_exec_members_member")
 }
 
-/// The underlying view does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-view ff_clothes_view {
-  cloth_id  String      @unique @default(dbgenerated("(uuid())")) @db.VarChar(36)
-  name      String?     @db.VarChar(100)
-  size      String?     @db.VarChar(20)
-  type      String?     @db.VarChar(100)
-  category  String?     @db.VarChar(100)
-  member_id String?     @db.VarChar(36)
-  log_id    String?     @db.VarChar(36)
-  timestamp DateTime?   @default(now()) @db.DateTime(0)
-  member    members?    @relation(fields: [member_id], references: [id])
-  cloth     ff_clothes? @relation(fields: [cloth_id], references: [id])
+model checklists_executions {
+  id                           String                         @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  checklist_id                 String                         @db.VarChar(36)
+  started_at                   DateTime                       @default(now()) @db.DateTime(0)
+  completed_at                 DateTime?                      @db.DateTime(0)
+  created_by_entity_id         String?                        @db.VarChar(36)
+  checklists_execution_members checklists_execution_members[]
+  checklists                   checklists                     @relation(fields: [checklist_id], references: [id], onDelete: Cascade, map: "fk_ch_exec_checklist")
+  auth_entities                auth_entities?                 @relation(fields: [created_by_entity_id], references: [id], map: "fk_ch_exec_created_by")
+  checklists_item_executions   checklists_item_executions[]
+
+  @@index([checklist_id], map: "idx_ch_exec_checklist")
+  @@index([created_by_entity_id], map: "idx_ch_exec_created_by")
 }
 
-enum member_permissions_mode {
-  read
-  update
-  create
-  delete
+model checklists_item_executions {
+  id                    String                            @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  execution_id          String                            @db.VarChar(36)
+  item_id               String                            @db.VarChar(36)
+  status                checklists_item_executions_status @default(pending)
+  notes                 String?                           @db.Text
+  checked_at            DateTime?                         @db.DateTime(0)
+  checked_by            String?                           @db.VarChar(36)
+  auth_entities         auth_entities?                    @relation(fields: [checked_by], references: [id], map: "fk_ch_item_exec_checked_by")
+  checklists_executions checklists_executions             @relation(fields: [execution_id], references: [id], onDelete: Cascade, map: "fk_ch_item_exec_exec")
+  checklists_items      checklists_items                  @relation(fields: [item_id], references: [id], onDelete: Cascade, map: "fk_ch_item_exec_item")
+
+  @@index([checked_by], map: "idx_ch_item_exec_checked_by")
+  @@index([execution_id], map: "idx_ch_item_exec_exec")
+  @@index([item_id], map: "idx_ch_item_exec_item")
 }
 
-enum group_permissions_mode {
-  read
-  update
-  create
-  delete
+model checklists_items {
+  id                         String                       @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  category_id                String                       @db.VarChar(36)
+  name                       String                       @db.VarChar(255)
+  description                String?                      @db.Text
+  order_index                Int                          @default(0)
+  checklists_item_executions checklists_item_executions[]
+  checklists_categories      checklists_categories        @relation(fields: [category_id], references: [id], onDelete: Cascade, map: "fk_ch_item_category")
+
+  @@index([category_id], map: "idx_ch_item_category")
+}
+
+model defect_report_status_logs {
+  id             String                           @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  report_id      String                           @db.VarChar(36)
+  status         defect_report_status_logs_status
+  timestamp      DateTime                         @default(now()) @db.DateTime(0)
+  changed_by     String?                          @db.VarChar(36)
+  auth_entities  auth_entities?                   @relation(fields: [changed_by], references: [id], map: "fk_drs_changed_by")
+  defect_reports defect_reports                   @relation(fields: [report_id], references: [id], onDelete: Cascade, map: "fk_drs_report")
+
+  @@index([changed_by], map: "idx_drs_changed_by")
+  @@index([report_id], map: "idx_drs_report")
+}
+
+model defect_reports {
+  id                                                                String                      @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  description                                                       String                      @db.Text
+  vehicle_id                                                        String?                     @db.VarChar(36)
+  type                                                              defect_reports_type
+  status                                                            defect_reports_status       @default(open)
+  image_url                                                         String?                     @db.VarChar(500)
+  created_at                                                        DateTime                    @default(now()) @db.DateTime(0)
+  created_by_entity_id                                              String?                     @db.VarChar(36)
+  modified_at                                                       DateTime                    @default(now()) @db.DateTime(0)
+  modified_by_entity_id                                             String?                     @db.VarChar(36)
+  defect_report_status_logs                                         defect_report_status_logs[]
+  auth_entities_defect_reports_created_by_entity_idToauth_entities  auth_entities?              @relation("defect_reports_created_by_entity_idToauth_entities", fields: [created_by_entity_id], references: [id], map: "fk_dr_created_by")
+  auth_entities_defect_reports_modified_by_entity_idToauth_entities auth_entities?              @relation("defect_reports_modified_by_entity_idToauth_entities", fields: [modified_by_entity_id], references: [id], map: "fk_dr_modified_by")
+  vehicles                                                          vehicles?                   @relation(fields: [vehicle_id], references: [id], map: "fk_dr_vehicle")
+
+  @@index([created_by_entity_id], map: "idx_dr_created_by")
+  @@index([modified_by_entity_id], map: "idx_dr_modified_by")
+  @@index([vehicle_id], map: "idx_dr_vehicle")
+}
+
+model divera_event_profile {
+  id                         String                       @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name                       String?                      @db.VarChar(100)
+  description                String?                      @db.Text
+  json                       String                       @db.Text
+  created_by_entity_id       String                       @db.VarChar(36)
+  template                   Boolean                      @default(false)
+  auth_entities              auth_entities                @relation(fields: [created_by_entity_id], references: [id], map: "divera_event_profile_auth_entities_id_fk")
+  divera_event_profile_group divera_event_profile_group[]
+  divera_event_profile_user  divera_event_profile_user[]
+  events                     events[]
+
+  @@index([created_by_entity_id], map: "divera_event_profile_auth_entities_id_fk")
+}
+
+model divera_event_profile_group {
+  id                   String               @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  profile_id           String               @db.VarChar(36)
+  divera_group_id      String               @db.VarChar(10)
+  groupsId             String?              @db.VarChar(36)
+  divera_event_profile divera_event_profile @relation(fields: [profile_id], references: [id], onDelete: Cascade, map: "divera_event_profile_group_divera_event_profile_id_fk")
+  divera_groups        divera_groups        @relation(fields: [divera_group_id], references: [divera_group_id], onDelete: Cascade, map: "divera_event_profile_group_divera_groups_id_fk")
+
+  @@unique([profile_id, divera_group_id], map: "divera_event_profile_group_pk")
+  @@index([divera_group_id], map: "divera_event_profile_group_divera_group_id_fk")
+}
+
+model divera_event_profile_user {
+  id                   String               @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  profile_id           String               @db.VarChar(36)
+  member_id            String               @db.VarChar(36)
+  divera_event_profile divera_event_profile @relation(fields: [profile_id], references: [id], onDelete: Cascade, map: "divera_event_profile_user_divera_event_profile_id_fk")
+  members              members              @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "divera_event_profile_user_members_id_fk")
+
+  @@unique([profile_id, member_id], map: "divera_event_profile_user_pk")
+  @@index([member_id], map: "divera_event_profile_user_member_id_fk")
+}
+
+model divera_groups {
+  divera_group_id            String                       @id @db.VarChar(10)
+  name                       String                       @db.VarChar(100)
+  callback                   divera_groups_callback?
+  divera_event_profile_group divera_event_profile_group[]
+  group_divera_groups        group_divera_groups[]
+}
+
+model divera_trainings {
+  divera_id          String                     @id @db.VarChar(10)
+  name               String                     @db.VarChar(100)
+  shortname          String                     @db.VarChar(10)
+  mapped_training_id String?                    @db.VarChar(36)
+  callback           divera_trainings_callback?
+  trainings          trainings?                 @relation(fields: [mapped_training_id], references: [id], map: "divera_trainings_trainings_id_fk")
+
+  @@index([mapped_training_id], map: "divera_trainings_trainings_id_fk")
+}
+
+model drinks {
+  id                String            @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name              String            @db.VarChar(200)
+  price             Float             @db.Float
+  image_url         String?           @db.VarChar(400)
+  status            drinks_status     @default(available)
+  created_by_entity String            @db.VarChar(36)
+  type              drinks_type?
+  bottle_volume     Float?            @db.Float
+  auth_entities     auth_entities     @relation(fields: [created_by_entity], references: [id], onUpdate: Restrict, map: "drinks_auth_entities_id_fk")
+  drinks_bookings   drinks_bookings[]
+
+  @@index([created_by_entity], map: "drinks_auth_entities_id_fk")
+}
+
+model drinks_bookings {
+  id                String        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  member_id         String        @db.VarChar(36)
+  drink_id          String        @db.VarChar(36)
+  quantity          Int
+  price             Float         @db.Float
+  timestamp         DateTime      @default(now()) @db.DateTime(0)
+  entity_created_id String        @db.VarChar(36)
+  auth_entities     auth_entities @relation(fields: [entity_created_id], references: [id], map: "drinks_bookings_auth_entities_id_fk")
+  drinks            drinks        @relation(fields: [drink_id], references: [id], map: "drinks_bookings_drinks_id_fk")
+  members           members       @relation(fields: [member_id], references: [id], map: "drinks_bookings_members_id_fk")
+
+  @@index([entity_created_id], map: "drinks_bookings_auth_entities_id_fk")
+  @@index([drink_id], map: "drinks_bookings_drinks_id_fk")
+  @@index([member_id], map: "drinks_bookings_members_id_fk")
+}
+
+model drinks_invoice {
+  id                  String                @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  period_start        DateTime              @db.Date
+  period_end          DateTime              @db.Date
+  created_at          DateTime              @default(now()) @db.DateTime(0)
+  created_by_id       String                @db.VarChar(36)
+  auth_entities       auth_entities         @relation(fields: [created_by_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "drinks_invoice_auth_entities_id_fk")
+  drinks_invoice_item drinks_invoice_item[]
+
+  @@unique([period_start, period_end], map: "invoices_period_unique")
+  @@index([created_by_id], map: "invoices_created_by_member_idx")
+}
+
+model drinks_invoice_item {
+  id             String                   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  member_id      String                   @db.VarChar(36)
+  invoice_id     String                   @db.VarChar(36)
+  total_price    Float                    @db.Float
+  created_at     DateTime                 @default(now()) @db.DateTime(0)
+  notes          String?                  @db.VarChar(255)
+  type           drinks_invoice_item_type
+  auth_entities  auth_entities            @relation(fields: [member_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "drinks_invoice_item_auth_entities_id_fk")
+  drinks_invoice drinks_invoice           @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "drinks_invoice_item_drinks_invoice_id_fk")
+
+  @@index([invoice_id], map: "drinks_invoice_item_invoice_id_fk")
+  @@index([member_id], map: "invoice_member_id_idx")
+}
+
+model event_planning_sessions {
+  id               String                         @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name             String                         @db.VarChar(255)
+  date_range_start DateTime                       @db.DateTime(0)
+  date_range_end   DateTime                       @db.DateTime(0)
+  status           event_planning_sessions_status @default(draft)
+  created_by       String                         @db.VarChar(36)
+  created_at       DateTime                       @default(now()) @db.Timestamp(0)
+  submitted_at     DateTime?                      @db.Timestamp(0)
+  auth_entities    auth_entities                  @relation(fields: [created_by], references: [id], map: "event_planning_sessions_auth_entities_id_fk")
+  events           events[]
+
+  @@index([created_by], map: "event_planning_sessions_auth_entities_id_fk")
+}
+
+model event_topics {
+  id                 String      @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  title              String      @db.VarChar(100)
+  feueron_event_type String      @db.VarChar(100)
+  feueron_topic      String      @db.VarChar(100)
+  jf                 Boolean     @default(false)
+  jf_events          jf_events[]
+}
+
+model feueron_member_mappings {
+  feueron_nr                                                                Int            @id
+  first_name                                                                String         @db.VarChar(50)
+  last_name                                                                 String         @db.VarChar(50)
+  mapped_member_id                                                          String?        @unique(map: "feueron_member_mappings_pk_2") @db.VarChar(36)
+  created_by_entity_id                                                      String?        @db.VarChar(36)
+  mapped_by_entity_id                                                       String?        @db.VarChar(36)
+  timestamp_created                                                         DateTime?      @default(now()) @db.DateTime(0)
+  timestamp_mapped                                                          DateTime?      @db.DateTime(0)
+  feueron_deleted                                                           Boolean        @default(false)
+  feueron_ignore                                                            Boolean        @default(false)
+  feueron_last_full_import                                                  DateTime?      @db.Timestamp(0)
+  feueron_last_change                                                       DateTime?      @db.Timestamp(0)
+  auth_entities_feueron_member_mappings_created_by_entity_idToauth_entities auth_entities? @relation("feueron_member_mappings_created_by_entity_idToauth_entities", fields: [created_by_entity_id], references: [id], map: "feueron_member_mappings_auth_entities_id_fk")
+  auth_entities_feueron_member_mappings_mapped_by_entity_idToauth_entities  auth_entities? @relation("feueron_member_mappings_mapped_by_entity_idToauth_entities", fields: [mapped_by_entity_id], references: [id], map: "feueron_member_mappings_auth_entities_id_fk_2")
+  members                                                                   members?       @relation(fields: [mapped_member_id], references: [id], map: "feueron_member_mappings_members_id_fk")
+
+  @@index([created_by_entity_id], map: "feueron_member_mappings_auth_entities_id_fk")
+  @@index([mapped_by_entity_id], map: "feueron_member_mappings_auth_entities_id_fk_2")
+}
+
+model food_order_paypal_account {
+  id          String        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  title       String        @db.VarChar(100)
+  username    String        @unique(map: "food_order_paypal_account_pk_2") @db.VarChar(25)
+  food_orders food_orders[]
+}
+
+model group_divera_groups {
+  group_id        String        @db.VarChar(36)
+  divera_group_id String        @db.VarChar(10)
+  divera_groups   divera_groups @relation(fields: [divera_group_id], references: [divera_group_id], onDelete: Cascade, map: "group_divera_groups_divera_groups_divera_group_id_fk")
+  groups          groups        @relation(fields: [group_id], references: [id], onDelete: Cascade, map: "group_divera_groups_groups_id_fk")
+
+  @@id([group_id, divera_group_id])
+  @@index([divera_group_id], map: "group_divera_groups_divera_groups_divera_group_id_fk")
+}
+
+model jf_event_participants {
+  jf_event_id String                       @db.VarChar(36)
+  member_id   String                       @db.VarChar(36)
+  status      jf_event_participants_status
+  role        jf_event_participants_role   @default(member)
+  jf_events   jf_events                    @relation(fields: [jf_event_id], references: [id], onDelete: Cascade, map: "jf_event_participants_jf_events_id_fk")
+  members     members                      @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "jf_event_participants_members_id_fk")
+
+  @@id([jf_event_id, member_id])
+  @@index([member_id], map: "jf_event_participants_members_id_fk")
+}
+
+model jf_events {
+  id                    String                  @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  start                 DateTime                @db.DateTime(0)
+  end                   DateTime?               @db.DateTime(0)
+  created_at            DateTime                @default(now()) @db.DateTime(0)
+  title                 String                  @db.VarChar(100)
+  responsible_member_id String?                 @db.VarChar(36)
+  comment               String?                 @db.Text
+  place                 String?                 @db.VarChar(200)
+  optional              Boolean                 @default(false)
+  feueon_event_topic_id String?                 @db.VarChar(36)
+  feueron_id            String?                 @db.VarChar(10)
+  feueron_ignore        Boolean?                @default(false)
+  preparation_time      Int?                    @default(30)
+  jf_event_participants jf_event_participants[]
+  event_topics          event_topics?           @relation(fields: [feueon_event_topic_id], references: [id], onDelete: Restrict, map: "jf_events_feueron_event_topic_id_fk")
+  members               members?                @relation(fields: [responsible_member_id], references: [id], map: "jf_events_members_id_fk")
+
+  @@index([feueon_event_topic_id], map: "jf_events_feueron_event_topic_id_fk")
+  @@index([responsible_member_id], map: "jf_events_members_id_fk")
+}
+
+model jobs_runs {
+  id               String           @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  job_id           String           @db.VarChar(36)
+  queued           DateTime         @default(now()) @db.DateTime(0)
+  started          DateTime?        @db.DateTime(0)
+  status           jobs_runs_status @default(pending)
+  args             String?          @db.Text
+  finished         DateTime?        @db.DateTime(0)
+  queued_by_entity String?          @db.VarChar(36)
+  job_logs         job_logs[]
+  auth_entities    auth_entities?   @relation(fields: [queued_by_entity], references: [id], map: "jobs_runs_auth_entities_id_fk")
+  jobs             jobs             @relation(fields: [job_id], references: [id], onDelete: Cascade, map: "jobs_runs_services_id_fk")
+
+  @@index([queued_by_entity], map: "jobs_runs_auth_entities_id_fk")
+  @@index([job_id], map: "jobs_runs_services_id_fk")
+}
+
+model pager {
+  id                   String          @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  inventory_number     String          @db.VarChar(40)
+  s_n                  String?         @db.VarChar(40)
+  member_id            String?         @db.VarChar(36)
+  pager_profile_id     String?         @db.VarChar(36)
+  first_name           String?         @db.VarChar(36)
+  last_name            String?         @db.VarChar(36)
+  created_by_entity_id String          @db.VarChar(36)
+  created_at           DateTime        @default(now()) @db.Timestamp(0)
+  comment              String?         @db.Text
+  pager_repair         Boolean         @default(false)
+  status               pager_status    @default(active)
+  auth_entities        auth_entities   @relation(fields: [created_by_entity_id], references: [id], map: "pager_auth_entities_id_fk")
+  members              members?        @relation(fields: [member_id], references: [id], map: "pager_members_id_fk")
+  pager_profiles       pager_profiles? @relation(fields: [pager_profile_id], references: [id], onDelete: Restrict, map: "pager_pager_profiles_id_fk")
+  pager_history        pager_history[]
+
+  @@index([created_by_entity_id], map: "pager_auth_entities_id_fk")
+  @@index([member_id], map: "pager_members_id_fk")
+  @@index([pager_profile_id], map: "pager_pager_profiles_id_fk")
+}
+
+model pager_history {
+  id             String        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  pager_id       String        @db.VarChar(36)
+  auth_entity_id String        @db.VarChar(36)
+  timestamp      DateTime      @default(now()) @db.DateTime(0)
+  json           String?       @db.LongText
+  auth_entities  auth_entities @relation(fields: [auth_entity_id], references: [id], map: "pager_history_auth_entities_id_fk")
+  pager          pager         @relation(fields: [pager_id], references: [id], onDelete: Cascade, map: "pager_history_pager_id_fk")
+
+  @@index([auth_entity_id], map: "pager_history_auth_entities_id_fk")
+  @@index([pager_id], map: "pager_history_pager_id_fk")
+}
+
+model pager_profiles {
+  id            String  @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  profile_title String  @db.VarChar(100)
+  description   String? @db.Text
+  pager         pager[]
+}
+
+model ticket_assignments {
+  id                 String        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  ticket_id          String        @db.VarChar(36)
+  assigned_member_id String        @db.VarChar(36)
+  assigned_at        DateTime      @default(now()) @db.DateTime(0)
+  assigned_by        String        @db.VarChar(36)
+  auth_entities      auth_entities @relation(fields: [assigned_by], references: [id], map: "ticket_assignments_auth_entities_id_fk")
+  members            members       @relation(fields: [assigned_member_id], references: [id], onDelete: Cascade, map: "ticket_assignments_members_id_fk")
+  tickets            tickets       @relation(fields: [ticket_id], references: [id], onDelete: Cascade, map: "ticket_assignments_tickets_id_fk")
+
+  @@unique([ticket_id, assigned_member_id], map: "ticket_assignments_unique")
+  @@index([assigned_by], map: "ticket_assignments_auth_entities_id_fk")
+  @@index([assigned_member_id], map: "ticket_assignments_members_id_fk")
+}
+
+model ticket_board_entities {
+  id                                                                      String                     @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  board_id                                                                String                     @db.VarChar(36)
+  auth_entity_id                                                          String                     @db.VarChar(36)
+  role                                                                    ticket_board_entities_role
+  created_at                                                              DateTime                   @default(now()) @db.DateTime(0)
+  created_by_entity_id                                                    String                     @db.VarChar(36)
+  auth_entities_ticket_board_entities_created_by_entity_idToauth_entities auth_entities              @relation("ticket_board_entities_created_by_entity_idToauth_entities", fields: [created_by_entity_id], references: [id], map: "ticket_board_entities_auth_entities_id_fk")
+  auth_entities_ticket_board_entities_auth_entity_idToauth_entities       auth_entities              @relation("ticket_board_entities_auth_entity_idToauth_entities", fields: [auth_entity_id], references: [id], onDelete: Cascade, map: "ticket_board_members_auth_entities_id_fk")
+  ticket_boards                                                           ticket_boards              @relation(fields: [board_id], references: [id], onDelete: Cascade, map: "ticket_board_members_ticket_boards_id_fk")
+
+  @@unique([board_id, auth_entity_id], map: "ticket_board_members_pk")
+  @@index([role], map: "idx_ticket_board_members_role")
+  @@index([created_by_entity_id], map: "ticket_board_entities_auth_entities_id_fk")
+  @@index([auth_entity_id], map: "ticket_board_members_auth_entities_id_fk")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model ticket_boards {
+  id                    String                  @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name                  String                  @db.VarChar(255)
+  description           String?                 @db.Text
+  ref                   ticket_boards_ref?      @unique(map: "unique_ticket_boards_ref")
+  created_at            DateTime                @default(now()) @db.DateTime(0)
+  created_by_entity_id  String                  @db.VarChar(36)
+  updated_at            DateTime                @default(now()) @db.DateTime(0)
+  ticket_board_entities ticket_board_entities[]
+  auth_entities         auth_entities           @relation(fields: [created_by_entity_id], references: [id], map: "ticket_boards_auth_entities_id_fk")
+  tickets               tickets[]
+
+  @@index([created_by_entity_id], map: "ticket_boards_auth_entities_id_fk")
+}
+
+model ticket_comments {
+  id            String        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  ticket_id     String        @db.VarChar(36)
+  comment       String        @db.Text
+  created_by    String        @db.VarChar(36)
+  created_at    DateTime      @default(now()) @db.DateTime(0)
+  modified_at   DateTime?     @db.DateTime(0)
+  auth_entities auth_entities @relation(fields: [created_by], references: [id], map: "ticket_comments_auth_entities_id_fk")
+  tickets       tickets       @relation(fields: [ticket_id], references: [id], onDelete: Cascade, map: "ticket_comments_tickets_id_fk")
+
+  @@index([created_by], map: "ticket_comments_auth_entities_id_fk")
+  @@index([created_at])
+  @@index([ticket_id], map: "ticket_comments_tickets_id_fk")
+}
+
+model ticket_files {
+  id            String         @id @db.VarChar(36)
+  ticket_id     String         @db.VarChar(36)
+  file_name     String         @db.VarChar(255)
+  file_url      String         @db.VarChar(1024)
+  description   String?        @db.Text
+  uploaded_by   String?        @db.VarChar(36)
+  uploaded_at   DateTime       @default(now()) @db.DateTime(0)
+  auth_entities auth_entities? @relation(fields: [uploaded_by], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "ticket_files_auth_entities_id_fk")
+  tickets       tickets        @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "ticket_files_tickets_id_fk")
+
+  @@index([uploaded_by], map: "ticket_files_auth_entities_id_fk")
+  @@index([ticket_id], map: "ticket_files_tickets_id_fk")
+}
+
+model ticket_logs {
+  id            String            @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  ticket_id     String            @db.VarChar(36)
+  changed_by    String            @db.VarChar(36)
+  timestamp     DateTime          @default(now()) @db.DateTime(0)
+  field         ticket_logs_field
+  old_value     String?           @db.Text
+  new_value     String?           @db.Text
+  auth_entities auth_entities     @relation(fields: [changed_by], references: [id], map: "ticket_logs_auth_entities_id_fk")
+  tickets       tickets           @relation(fields: [ticket_id], references: [id], onDelete: Cascade, map: "ticket_logs_tickets_id_fk")
+
+  @@index([changed_by], map: "ticket_logs_auth_entities_id_fk")
+  @@index([ticket_id], map: "ticket_logs_tickets_id_fk")
+  @@index([timestamp])
+}
+
+model ticket_reminders {
+  id            String    @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  ticket_id     String    @db.VarChar(36)
+  scheduled_for DateTime  @db.DateTime(0)
+  sent_at       DateTime? @db.DateTime(0)
+  created_at    DateTime  @default(now()) @db.DateTime(0)
+  tickets       tickets   @relation(fields: [ticket_id], references: [id], onDelete: Cascade, map: "ticket_reminders_tickets_id_fk")
+
+  @@index([scheduled_for])
+  @@index([sent_at])
+  @@index([ticket_id], map: "ticket_reminders_tickets_id_fk")
+}
+
+model tickets {
+  id                                                          String               @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  ticket_number                                               Int
+  title                                                       String               @db.VarChar(255)
+  status                                                      tickets_status       @default(open)
+  priority                                                    tickets_priority     @default(normal)
+  type                                                        tickets_type?        @default(task)
+  custom_key                                                  String?              @db.VarChar(255)
+  board_id                                                    String               @db.VarChar(36)
+  workflow_execution_id                                       String?              @db.VarChar(36)
+  escalation_member_id                                        String?              @db.VarChar(36)
+  escalation_group_id                                         String?              @db.VarChar(36)
+  escalated_at                                                DateTime?            @db.DateTime(0)
+  created_by_entity_id                                        String               @db.VarChar(36)
+  created_at                                                  DateTime             @default(now()) @db.DateTime(0)
+  modified_by_entity_id                                       String?              @db.VarChar(36)
+  modified_at                                                 DateTime             @default(now()) @db.DateTime(0)
+  due_date                                                    DateTime?            @db.DateTime(0)
+  completed_at                                                DateTime?            @db.DateTime(0)
+  completed_by_entity_id                                      String?              @db.VarChar(36)
+  description_html                                            String?              @db.Text
+  ticket_assignments                                          ticket_assignments[]
+  ticket_comments                                             ticket_comments[]
+  ticket_files                                                ticket_files[]
+  ticket_logs                                                 ticket_logs[]
+  ticket_reminders                                            ticket_reminders[]
+  ticket_boards                                               ticket_boards        @relation(fields: [board_id], references: [id], onUpdate: Restrict, map: "fk_tickets_board")
+  auth_entities_tickets_completed_by_entity_idToauth_entities auth_entities?       @relation("tickets_completed_by_entity_idToauth_entities", fields: [completed_by_entity_id], references: [id], map: "tickets_auth_entities_completed_fk")
+  auth_entities_tickets_created_by_entity_idToauth_entities   auth_entities        @relation("tickets_created_by_entity_idToauth_entities", fields: [created_by_entity_id], references: [id], map: "tickets_auth_entities_created_fk")
+  auth_entities_tickets_modified_by_entity_idToauth_entities  auth_entities?       @relation("tickets_modified_by_entity_idToauth_entities", fields: [modified_by_entity_id], references: [id], map: "tickets_auth_entities_modified_fk")
+  groups                                                      groups?              @relation(fields: [escalation_group_id], references: [id], map: "tickets_escalation_group_fk")
+  members                                                     members?             @relation(fields: [escalation_member_id], references: [id], map: "tickets_escalation_member_fk")
+  workflow_executions                                         workflow_executions? @relation(fields: [workflow_execution_id], references: [id], onDelete: Cascade, map: "tickets_workflow_executions_fk")
+
+  @@index([board_id], map: "idx_tickets_board_id")
+  @@index([completed_by_entity_id], map: "tickets_auth_entities_completed_fk")
+  @@index([created_by_entity_id], map: "tickets_auth_entities_created_fk")
+  @@index([modified_by_entity_id], map: "tickets_auth_entities_modified_fk")
+  @@index([due_date])
+  @@index([escalation_group_id], map: "tickets_escalation_group_fk")
+  @@index([escalation_member_id], map: "tickets_escalation_member_fk")
+  @@index([priority])
+  @@index([status])
+  @@index([workflow_execution_id], map: "tickets_workflow_executions_fk")
+}
+
+model workflow_actions {
+  id                 String               @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name               String               @db.VarChar(255)
+  key                String?              @db.VarChar(100)
+  description        String?              @db.Text
+  workflow_processes workflow_processes[]
+}
+
+model workflow_conditions {
+  id                           String                         @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name                         String                         @db.VarChar(100)
+  key                          String?                        @db.VarChar(50)
+  description                  String?                        @db.Text
+  workflow_process_connections workflow_process_connections[]
+  workflow_processes           workflow_processes[]
+}
+
+model workflow_connection_executions {
+  id                           String                                @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  workflow_execution_id        String                                @db.VarChar(36)
+  connection_id                String                                @db.VarChar(36)
+  created_at                   DateTime                              @default(now()) @db.DateTime(0)
+  planned_for                  DateTime                              @db.DateTime(0)
+  finished_at                  DateTime?                             @db.DateTime(0)
+  result                       workflow_connection_executions_result @default(pending)
+  workflow_process_connections workflow_process_connections          @relation(fields: [connection_id], references: [id], onDelete: Cascade, map: "workflow_connection_executions_process_connections_id_fk")
+  workflow_executions          workflow_executions                   @relation(fields: [workflow_execution_id], references: [id], onDelete: Cascade, map: "workflow_connection_executions_workflow_executions_id_fk")
+
+  @@index([connection_id], map: "workflow_connection_executions_process_connections_id_fk")
+  @@index([workflow_execution_id], map: "workflow_connection_executions_workflow_executions_id_fk")
+}
+
+model workflow_execution_context_attributes {
+  workflow_execution_id String              @db.VarChar(36)
+  key                   String              @db.VarChar(100)
+  value                 String?             @db.Text
+  workflow_executions   workflow_executions @relation(fields: [workflow_execution_id], references: [id], onDelete: Cascade, map: "workflow_execution_context_attributes_workflow_executions_id_fk")
+
+  @@id([workflow_execution_id, key])
+}
+
+model workflow_execution_logs {
+  id                           String                        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  workflow_execution_id        String                        @db.VarChar(36)
+  level                        workflow_execution_logs_level
+  message                      String                        @db.Text
+  process_id                   String?                       @db.VarChar(36)
+  connection_id                String?                       @db.VarChar(36)
+  timestamp                    DateTime                      @default(now()) @db.Timestamp(0)
+  workflow_process_connections workflow_process_connections? @relation(fields: [connection_id], references: [id], map: "workflow_execution_logs_process_connections_id_fk")
+  workflow_processes           workflow_processes?           @relation(fields: [process_id], references: [id], map: "workflow_execution_logs_process_definitions_id_fk")
+  workflow_executions          workflow_executions           @relation(fields: [workflow_execution_id], references: [id], onDelete: Cascade, map: "workflow_execution_logs_workflow_executions_id_fk")
+
+  @@index([connection_id], map: "workflow_execution_logs_process_connections_id_fk")
+  @@index([process_id], map: "workflow_execution_logs_process_definitions_id_fk")
+  @@index([workflow_execution_id], map: "workflow_execution_logs_workflow_executions_id_fk")
+}
+
+model workflow_executions {
+  id                                    String                                  @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  workflow_id                           String                                  @db.VarChar(36)
+  foreign_id                            String?                                 @db.VarChar(100)
+  related_member_id                     String?                                 @db.VarChar(36)
+  created_at                            DateTime                                @default(dbgenerated("(curtime())")) @db.Timestamp(0)
+  status                                workflow_executions_status?             @default(running)
+  tickets                               tickets[]
+  workflow_connection_executions        workflow_connection_executions[]
+  workflow_execution_context_attributes workflow_execution_context_attributes[]
+  workflow_execution_logs               workflow_execution_logs[]
+  members                               members?                                @relation(fields: [related_member_id], references: [id], map: "workflow_executions_members_id_fk")
+  workflows                             workflows                               @relation(fields: [workflow_id], references: [id], onDelete: Cascade, map: "workflow_executions_process_workflows_id_fk")
+  workflow_process_executions           workflow_process_executions[]
+
+  @@index([related_member_id], map: "workflow_executions_members_id_fk")
+  @@index([workflow_id], map: "workflow_executions_process_workflows_id_fk")
+}
+
+model workflow_notification_process_props {
+  process_id             String                                        @id @db.VarChar(36)
+  notification_id        String?                                       @db.VarChar(36)
+  receiver               workflow_notification_process_props_receiver?
+  group_id               String?                                       @db.VarChar(36)
+  groups                 groups?                                       @relation(fields: [group_id], references: [id], map: "process_notifications_props_groups_id_fk")
+  workflow_processes     workflow_processes                            @relation(fields: [process_id], references: [id], onDelete: Cascade, map: "process_notifications_props_process_definitions_id_fk")
+  workflow_notifications workflow_notifications?                       @relation(fields: [notification_id], references: [id], map: "process_notifications_props_process_notifications_id_fk")
+
+  @@index([group_id], map: "process_notifications_props_groups_id_fk")
+  @@index([notification_id], map: "process_notifications_props_process_notifications_id_fk")
+}
+
+model workflow_notifications {
+  id                                  String                                @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name                                String                                @db.VarChar(100)
+  key                                 String?                               @db.VarChar(100)
+  description                         String?                               @db.Text
+  workflow_notification_process_props workflow_notification_process_props[]
+}
+
+model workflow_process_connections {
+  id                                                                         String                                   @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  source_type                                                                workflow_process_connections_source_type @default(default)
+  description                                                                String?                                  @db.Text
+  source                                                                     String                                   @db.VarChar(36)
+  target                                                                     String                                   @db.VarChar(36)
+  type                                                                       workflow_process_connections_type        @default(pass)
+  condition_id                                                               String?                                  @db.VarChar(36)
+  delay_seconds                                                              Int?
+  max_retries                                                                Int?
+  modified_at                                                                DateTime                                 @default(now()) @db.Timestamp(0)
+  modified_by                                                                String?                                  @db.VarChar(36)
+  workflow_connection_executions                                             workflow_connection_executions[]
+  workflow_execution_logs                                                    workflow_execution_logs[]
+  workflow_conditions                                                        workflow_conditions?                     @relation(fields: [condition_id], references: [id], map: "process_connections_process_conditions_id_fk")
+  members                                                                    members?                                 @relation(fields: [modified_by], references: [id], map: "process_dependencies_members_id_fk")
+  workflow_processes_workflow_process_connections_targetToworkflow_processes workflow_processes                       @relation("workflow_process_connections_targetToworkflow_processes", fields: [target], references: [id], onDelete: Cascade, map: "process_dependencies_processes_id_fk")
+  workflow_processes_workflow_process_connections_sourceToworkflow_processes workflow_processes                       @relation("workflow_process_connections_sourceToworkflow_processes", fields: [source], references: [id], onDelete: Cascade, map: "process_dependencies_processes_id_fk_2")
+
+  @@unique([source, target], map: "process_dependencies_pk")
+  @@index([condition_id], map: "process_connections_process_conditions_id_fk")
+  @@index([modified_by], map: "process_dependencies_members_id_fk")
+  @@index([target], map: "process_dependencies_processes_id_fk")
+}
+
+model workflow_process_executions {
+  id                    String                             @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  workflow_execution_id String                             @db.VarChar(36)
+  process_id            String                             @db.VarChar(36)
+  status                workflow_process_executions_status
+  timestamp             DateTime                           @default(dbgenerated("(curtime())")) @db.DateTime(0)
+  method                workflow_process_executions_method
+  workflow_processes    workflow_processes                 @relation(fields: [process_id], references: [id], onDelete: Cascade, map: "workflow_process_executions_process_definitions_id_fk")
+  workflow_executions   workflow_executions                @relation(fields: [workflow_execution_id], references: [id], onDelete: Cascade, map: "workflow_process_executions_workflow_executions_id_fk")
+
+  @@index([process_id], map: "workflow_process_executions_process_definitions_id_fk")
+  @@index([workflow_execution_id], map: "workflow_process_executions_workflow_executions_id_fk")
+}
+
+model workflow_processes {
+  id                                                                                                 String                               @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  workflow_id                                                                                        String                               @db.VarChar(36)
+  name                                                                                               String?                              @db.VarChar(200)
+  description                                                                                        String?                              @db.Text
+  technical_details                                                                                  String?                              @db.Text
+  type                                                                                               workflow_processes_type
+  active                                                                                             Boolean                              @default(true)
+  pos_x                                                                                              Int?
+  pos_y                                                                                              Int?
+  modified_by                                                                                        String?                              @db.VarChar(36)
+  modified_at                                                                                        DateTime?                            @default(now()) @db.Timestamp(0)
+  action_id                                                                                          String?                              @db.VarChar(36)
+  condition_id                                                                                       String?                              @db.VarChar(36)
+  workflow_execution_logs                                                                            workflow_execution_logs[]
+  workflow_notification_process_props                                                                workflow_notification_process_props?
+  workflow_process_connections_workflow_process_connections_targetToworkflow_processes               workflow_process_connections[]       @relation("workflow_process_connections_targetToworkflow_processes")
+  workflow_process_connections_workflow_process_connections_sourceToworkflow_processes               workflow_process_connections[]       @relation("workflow_process_connections_sourceToworkflow_processes")
+  workflow_process_executions                                                                        workflow_process_executions[]
+  workflow_actions                                                                                   workflow_actions?                    @relation(fields: [action_id], references: [id], map: "process_definitions_process_actions_id_fk")
+  workflow_conditions                                                                                workflow_conditions?                 @relation(fields: [condition_id], references: [id], map: "process_definitions_process_conditions_id_fk")
+  workflows                                                                                          workflows                            @relation(fields: [workflow_id], references: [id], onDelete: Cascade, map: "process_definitions_process_workflows_id_fk")
+  members                                                                                            members?                             @relation(fields: [modified_by], references: [id], map: "process_members_id_fk")
+  workflow_start_process_props                                                                       workflow_start_process_props?
+  workflow_start_workflow_props_workflow_start_workflow_props_trigger_process_idToworkflow_processes workflow_start_workflow_props[]      @relation("workflow_start_workflow_props_trigger_process_idToworkflow_processes")
+  workflow_start_workflow_props_workflow_start_workflow_props_process_idToworkflow_processes         workflow_start_workflow_props?       @relation("workflow_start_workflow_props_process_idToworkflow_processes")
+
+  @@index([action_id], map: "process_definitions_process_actions_id_fk")
+  @@index([condition_id], map: "process_definitions_process_conditions_id_fk")
+  @@index([workflow_id], map: "process_definitions_process_workflows_id_fk")
+  @@index([modified_by], map: "process_members_id_fk")
+}
+
+model workflow_start_process_props {
+  process_definition_id     String                                     @id @db.VarChar(36)
+  cron                      String?                                    @db.VarChar(40)
+  endpoint                  String?                                    @unique(map: "process_start_props_pk") @db.VarChar(100)
+  context_mode              workflow_start_process_props_context_mode? @default(use)
+  overwrite                 Boolean?
+  unique_member_context     Boolean?
+  unique_foreign_context    Boolean?
+  unique_attributes_context Boolean?
+  ref                       workflow_start_process_props_ref?          @unique(map: "process_start_props_pk_2")
+  workflow_processes        workflow_processes                         @relation(fields: [process_definition_id], references: [id], onDelete: Cascade, map: "process_start_props_process_definitions_id_fk")
+}
+
+model workflow_start_workflow_props {
+  process_id                                                                              String                                                @id @db.VarChar(36)
+  trigger_process_id                                                                      String?                                               @db.VarChar(36)
+  context_forward_option                                                                  workflow_start_workflow_props_context_forward_option?
+  workflow_processes_workflow_start_workflow_props_trigger_process_idToworkflow_processes workflow_processes?                                   @relation("workflow_start_workflow_props_trigger_process_idToworkflow_processes", fields: [trigger_process_id], references: [id], map: "workflow_start_workflow_props_process_definitions_id_fk")
+  workflow_processes_workflow_start_workflow_props_process_idToworkflow_processes         workflow_processes                                    @relation("workflow_start_workflow_props_process_idToworkflow_processes", fields: [process_id], references: [id], onDelete: Cascade, map: "workflow_start_workflow_props_process_definitions_id_fk_2")
+
+  @@index([trigger_process_id], map: "workflow_start_workflow_props_process_definitions_id_fk")
+}
+
+model workflows {
+  id                  String                @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  name                String                @db.VarChar(50)
+  active              Boolean               @default(true)
+  parent_workflow_id  String?               @db.VarChar(36)
+  workflow_executions workflow_executions[]
+  workflow_processes  workflow_processes[]
+  workflows           workflows?            @relation("workflowsToworkflows", fields: [parent_workflow_id], references: [id], map: "workflows_workflows_id_fk")
+  other_workflows     workflows[]           @relation("workflowsToworkflows")
+
+  @@index([parent_workflow_id], map: "workflows_workflows_id_fk")
 }
 
 enum event_responses_planned_participation {
@@ -1074,23 +1651,12 @@ enum event_responses_planned_participation {
   maybe
 }
 
-enum job_logs_type {
-  info
-  warning
-  error
-}
-
 enum trainings_type {
   crew
   leadership
   technical
   driving
   jf
-}
-
-enum jobs_status {
-  success
-  error
 }
 
 enum shop_orders_status {
@@ -1112,23 +1678,10 @@ enum shop_products_gender {
   w
 }
 
-enum divera_user_sync_problems_reason {
-  multiple_matches
-  no_match
-  missing_first_name
-  missing_last_name
-}
-
 enum events_source {
   divera
   app
   feureon
-}
-
-enum events_status {
-  draft
-  open
-  closed
 }
 
 enum vehicle_status {
@@ -1138,19 +1691,6 @@ enum vehicle_status {
   status_4 @map("4")
   status_5 @map("5")
   status_6 @map("6")
-}
-
-enum processes_type {
-  service
-  condition_and @map("condition-and")
-  condition_or  @map("condition-or")
-  prompt
-}
-
-enum process_records_status {
-  wait_for_dependency
-  wait_for_success
-  done
 }
 
 enum food_order_items_payment {
@@ -1292,29 +1832,6 @@ enum jf_clothes_state_logs_state {
   returned
 }
 
-enum permissions_key {
-  events
-  plaka_admin                     @map("plaka.admin")
-  personnel_permissions           @map("personnel.permissions")
-  infrastructure_lockers          @map("infrastructure.lockers")
-  personnel_groups_members        @map("personnel.groups.members")
-  shop
-  personnel_groups_permissions    @map("personnel.groups.permissions")
-  shop_admin                      @map("shop.admin")
-  personnel_members               @map("personnel.members")
-  jobs
-  personnel_groups                @map("personnel.groups")
-  vehicles
-  vehicle_instructions            @map("vehicle.instructions")
-  vehicle_instructions_suspension @map("vehicle.instructions.suspension")
-  schedules
-  plaka
-  nameplates_print                @map("nameplates.print")
-  trainings
-  jf_members                      @map("jf.members")
-  jf_clothes                      @map("jf.clothes")
-}
-
 enum member_training_logs_status {
   attended
   passed
@@ -1349,32 +1866,6 @@ enum groups_type {
   other
 }
 
-enum trainings_ref {
-  GF
-  TF
-  ZF
-  VF
-  TM
-  AGT
-  G26_3
-  AGT_Strecke
-  TH
-  C
-  KS
-  MA
-}
-
-enum groups_ref {
-  Einsatzabteilung
-  Jugendfeuerwehr
-  Alterabteilung
-  Besondere_Abteilung  @map("Besondere Abteilung")
-  F_rdernde_Mitglieder @map("Fördernde Mitglieder")
-  Kinderfeuerwehr
-  F_hrung              @map("Führung")
-  JF_Betreuer          @map("JF-Betreuer")
-}
-
 enum food_order_items_method {
   client
   admin
@@ -1385,6 +1876,18 @@ enum members_status {
   applicant
   active
   archived
+}
+
+enum workflow_process_connections_source_type {
+  default
+  branch_false @map("branch-false")
+}
+
+enum workflow_execution_logs_level {
+  info
+  warning
+  error
+  not_implemented @map("not-implemented")
 }
 
 enum member_attribute_logs_key {
@@ -1400,80 +1903,319 @@ enum member_attribute_logs_key {
   divera_id
   feueron_id
   status
+  private_email
 }
 
-enum job_metrics_status {
+enum workflow_start_workflow_props_context_forward_option {
+  keep_basic @map("keep-basic")
+  keep_all   @map("keep-all")
+  blank
+}
+
+enum divera_groups_callback {
+  Klasse_C_und_WLF_Einweisung @map("Klasse C und WLF Einweisung")
+}
+
+enum jf_event_participants_status {
+  attended
+  excused
+  absent
+}
+
+enum auth_hash_method {
+  divera
+  iserv
+  app
+}
+
+enum workflow_notification_process_props_receiver {
+  related_member
+  group_all
+  group_functional
+}
+
+enum defect_report_status_logs_status {
+  open
+  read
+  in_progress
+  completed
+}
+
+enum permissions_key {
+  events
+  events_divera                   @map("events.divera")
+  events_divera_templates         @map("events.divera.templates")
+  events_planning                 @map("events.planning")
+  plaka_admin                     @map("plaka.admin")
+  personnel_permissions           @map("personnel.permissions")
+  infrastructure_lockers          @map("infrastructure.lockers")
+  infrastructure_clothes          @map("infrastructure.clothes")
+  personnel_groups_members        @map("personnel.groups.members")
+  shop
+  personnel_groups_permissions    @map("personnel.groups.permissions")
+  shop_admin                      @map("shop.admin")
+  personnel_members               @map("personnel.members")
+  jobs
+  personnel_groups                @map("personnel.groups")
+  vehicles
+  vehicle_instructions            @map("vehicle.instructions")
+  vehicle_instructions_suspension @map("vehicle.instructions.suspension")
+  schedules
+  plaka
+  nameplates_print                @map("nameplates.print")
+  trainings
+  jf_members                      @map("jf.members")
+  jf_clothes                      @map("jf.clothes")
+  jf_events                       @map("jf.events")
+  workflows
+  workflows_execution             @map("workflows.execution")
+  workflows_actions               @map("workflows.actions")
+  workflows_conditions            @map("workflows.conditions")
+  workflows_notifications         @map("workflows.notifications")
+  divera_members                  @map("divera.members")
+  divera_groups                   @map("divera.groups")
+  divera_trainings                @map("divera.trainings")
+  admin_auth_api                  @map("admin.auth.api")
+  admin_auth_api_permission       @map("admin.auth.api.permission")
+  admin_auth_profile              @map("admin.auth.profile")
+  admin_auth_device               @map("admin.auth.device")
+  admin_auth_device_permission    @map("admin.auth.device.permission")
+  permissions_admin               @map("permissions.admin")
+  drinks_book_own                 @map("drinks.book.own")
+  drinks_book_all                 @map("drinks.book.all")
+  drinks_admin                    @map("drinks.admin")
+  admin
+  personnel_admin                 @map("personnel.admin")
+  issue_report_own                @map("issue_report.own")
+  issue_report_all                @map("issue_report.all")
+  pager
+  pager_profiles                  @map("pager.profiles")
+  tickets
+  tickets_admin                   @map("tickets.admin")
+}
+
+enum workflow_start_process_props_context_mode {
+  new
+  use
+  use_require @map("use-require")
+  ignore
+}
+
+enum workflow_process_executions_status {
+  success
+  skipped
+  error
+}
+
+enum job_logs_type {
+  debug
+  info
+  warning
+  error
+  fatal
+}
+
+enum ticket_boards_ref {
+  obm
+  suitabilities
+  pagers
+  clothes
+}
+
+enum tickets_status {
+  planned
+  open
+  in_progress
+  completed
+  cancelled
+}
+
+enum defect_reports_type {
+  vehicle
+  fire_equipment
+  clothing
+  building
+  radio
+  breathing_apparatus
+}
+
+enum ticket_board_entities_role {
+  OWNER
+  AGENT
+  MEMBER
+  WATCHER
+}
+
+enum jf_event_participants_role {
+  supervisor
+  guest
+  member
+  other
+}
+
+enum checklists_item_executions_status {
+  pending
+  checked
+  defect
+}
+
+enum auth_logs_status {
   success
   error
 }
 
-enum member_attributes_view_key {
-  last_name
-  first_name
-  personnel_nr
-  birthdate
-  gender
-  dienstgrad
-  department
-  image_url
-  iserv_username
-  divera_id
-  feueron_id
+enum divera_trainings_callback {
+  Tauglicher_AGT                   @map("Tauglicher AGT")
+  Truppmann_1_oder_2               @map("Truppmann 1 oder 2")
+  Gueltiger_Fuehrerschein_Klasse_C @map("Gueltiger Fuehrerschein Klasse C")
+}
+
+enum tickets_priority {
+  low
+  normal
+  high
+  urgent
+}
+
+enum ticket_logs_field {
+  title
+  description
   status
+  priority
+  board_id
+  completed_at
 }
 
-enum member_trainings_view_status {
-  attended
-  passed
-  not_passed @map("not-passed")
+enum defect_reports_status {
+  open
+  read
+  in_progress
+  completed
 }
 
-enum food_order_member_stats_gender {
-  male
-  female
-  other
+enum jobs_runs_status {
+  pending
+  success
+  error
+  stopped
+  executing
 }
 
-enum member_presence_view_gender {
-  male
-  female
-  other
+enum event_planning_sessions_status {
+  draft
+  submitted
 }
 
-enum member_attributes_view_source {
-  feueron
-  app
+enum drinks_status {
+  available
+  disabled
+  deleted
+  discontinued
+}
+
+enum workflow_process_executions_method {
   manual
-}
-
-enum food_order_menu_stats_category {
-  Gyros
-  Grill
-  Deutsch
-  Salate
-  Nudeln
-  Pita
-  Beilagen
-  Sonstiges
-}
-
-enum member_presence_view_department {
-  Einsatzabteilung_FF  @map("Einsatzabteilung FF")
-  Altersabteilung
-  F_rdernde_Mitglieder @map("Fördernde Mitglieder")
-  Jugendfeuerwehr
-  Kinderfeuerwehr
-  Musikzug
-  Besondere_Abteilung  @map("Besondere Abteilung")
-}
-
-enum clothes_view_owner {
-  jf_bs @map("jf-bs")
-  of_56 @map("of-56")
-}
-
-enum member_trainings_view_source {
-  feueron
+  cron
+  workflow
+  webhook
   app
 }
 
+enum workflow_processes_type {
+  action
+  and_block      @map("and-block")
+  or_block       @map("or-block")
+  case
+  start
+  end
+  notification
+  start_workflow @map("start-workflow")
+}
+
+enum tickets_type {
+  task
+  info
+  issue
+  custom
+}
+
+enum trainings_ref {
+  GF
+  TF
+  ZF
+  VF
+  TM
+  AGT
+  G26_3
+  AGT_Strecke
+  TH
+  C
+  KS
+  MA
+  AGT_Einsatz
+  AGT_Unterweisung
+  AGT__bung        @map("AGT_Übung")
+}
+
+enum workflow_executions_status {
+  hold
+  done
+  running
+}
+
+enum workflow_process_connections_type {
+  pass
+  target_not_executed
+  condition
+  condition_inverted
+  delay
+}
+
+enum drinks_invoice_item_type {
+  MANUAL_ENTRY
+  SERVER_BOOKING
+}
+
+enum workflow_connection_executions_result {
+  false
+  true
+  error
+  pending
+  aborted
+}
+
+enum drinks_type {
+  softdrink
+  alcohol
+  water
+  juice_based
+  other
+}
+
+enum workflow_start_process_props_ref {
+  confirm_shop_order
+}
+
+enum groups_ref {
+  Einsatzabteilung
+  Jugendfeuerwehr
+  Alterabteilung
+  Besondere_Abteilung  @map("Besondere Abteilung")
+  F_rdernde_Mitglieder @map("Fördernde Mitglieder")
+  Kinderfeuerwehr
+  F_hrung              @map("Führung")
+  JF_Betreuer          @map("JF-Betreuer")
+  JF_Schnupperer       @map("JF-Schnupperer")
+}
+
+enum pager_status {
+  active
+  archived
+}
+
+enum events_status {
+  draft
+  planned
+  open
+  closed
+}
