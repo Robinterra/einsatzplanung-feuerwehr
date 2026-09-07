@@ -1,0 +1,17 @@
+[
+  {
+    "alarmcode_id": 12,
+    "title": "B B2Y - Zimmerbrand",
+    "vehicles": ["BS 01-11-01,,BS 01-26-01,BS 01-59-02,BS 01-83-02,BS 09-17-15,BS 09-46-15,BS 09-46-56,BS 80-44-01,BS 09-19-56,BS 09-64-56,BS 09-67-56,BS FFw AB-SCHLAUCH,BS FFw Watenbüttel,BS FFw F-WFZ-Süd"]
+  },
+  {
+    "alarmcode_id": 15,
+    "title": "B BMA-Auslösung",
+    "vehicles": ["BS BS 09-46-56,BS 80-44-01,BS 09-19-56"]
+  }
+  {
+    "alarmcode_id": 19,
+    "title": "H 0 Türöffnung",
+    "vehicles": ["BS BS 09-46-56"]
+  }
+]
