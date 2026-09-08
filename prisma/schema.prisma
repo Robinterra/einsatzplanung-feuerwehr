@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
+  url      = "mysql://root:root@127.1.1.1:3306/feuerwehr?tlsInsecure=true"
 }
 
 model event_participation {
