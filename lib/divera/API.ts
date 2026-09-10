@@ -2,15 +2,18 @@
 //Ausgabe: ALarmstichwort(String), vehicle (string, mit komma getrennte OPTA Kennungen)
 //ZB Stichwort: "B BMA - BMA-Auslösung", vehicle: "BS 01-11-01,,BS 01-26-01,BS 01-59-02,BS 01-83-02,BS 09-17-15,BS 09-46-15,BS 09-46-56,BS 80-44-01,BS 09-19-56,BS 09-64-56,BS 09-67-56,BS FFw AB-SCHLAUCH,BS FFw Watenbüttel,BS FFw F-WFZ-Süd"
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 export interface AlarmItem {
 	alarmcode_id: number;
 	title: string;
 	vehicles: string[];
+	date: number;
 }
 
 export async function pullDiveraAlarms(): Promise<AlarmItem[]> {
-	const filePath = "lib/db/divera/testAlarms.txt";
+	const filePath = path.join(process.cwd(), "public", "testAlarms.txt");
+
 	const fileContent = await readFile(filePath, "utf-8");
 	const parsedData: unknown = JSON.parse(fileContent);
 	const alarmItems = Array.isArray(parsedData) ? parsedData : [parsedData];
@@ -23,6 +26,7 @@ export async function pullDiveraAlarms(): Promise<AlarmItem[]> {
 		alarmcode_id: alarmItem.alarmcode_id,
 		title: alarmItem.title,
 		vehicles: alarmItem.vehicles,
+		date: alarmItem.date,
 	}));
 }
 
@@ -36,6 +40,7 @@ function isAlarmItem(value: unknown): value is AlarmItem {
 		typeof alarmItem.alarmcode_id === "number" &&
 		typeof alarmItem.title === "string" &&
 		Array.isArray(alarmItem.vehicles) &&
-		alarmItem.vehicles.every((vehicle) => typeof vehicle === "string")
+		alarmItem.vehicles.every((vehicle) => typeof vehicle === "string") &&
+		typeof alarmItem.date === "number"
 	);
 }

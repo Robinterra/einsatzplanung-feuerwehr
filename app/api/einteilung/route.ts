@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
+import { showAlarms } from "@/lib/divera/alarm";
 
 export async function GET() {
-  return NextResponse.json({ message: "Hello from the API!" });
-}
+  try {
+    const alarms = await showAlarms();
 
-export async function POST(req: Request) {
-  const body = await req.json();
+    return NextResponse.json(alarms);
+  } catch (error) {
+    console.error(error);
 
-  return NextResponse.json({
-    received: body
-  });
+    return NextResponse.json(
+      { error: "Einsätze konnten nicht abgerufen werden" },
+      { status: 500 }
+    );
+  }
 }

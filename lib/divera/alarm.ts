@@ -1,5 +1,7 @@
 import { pullDiveraAlarms } from "./API";
 
+import { prisma } from "@/lib/db/prisma";
+
 export enum KindOfAlarm {
     B = "B",
     H = "H",
@@ -10,24 +12,36 @@ export class Alarm {
         public alarmcode_id = 0,
         public kindOfAlarm: KindOfAlarm | null = null,
         public vehicles: string[] = [],
+        public timePassed = 0
     ) {}
 }
 
-export async function createAlarm(): Promise<Alarm | null> {
+export async function showAlarms(): Promise<Alarm[] | null> {
+    const Alarms: Alarm[] = await createAlarm();
+ return Alarms;
+}
+
+export async function createAlarm(): Promise<Alarm[] | null> {
     const alarmItems = await pullDiveraAlarms();
-    const newAlarm = new Alarm();
+    const newAlarms: Alarm[] = [];
+    const now = Math.floor(Date.now() / 1000);
+    const oneDay = 24 * 60 * 60;
 
     for (const alarmItem of alarmItems) {
-        if (alarmItem.vehicles.length > 0) {
+        console.log("123")
+        if (alarmItem.vehicles.length > 0 &&  alarmItem.date > now - oneDay) {
+            console.log("hallo");
+            const newAlarm = new Alarm();
             newAlarm.kindOfAlarm = alarmItem.title.split(" ")[0] as KindOfAlarm;
             newAlarm.alarmcode_id = alarmItem.alarmcode_id;
             newAlarm.vehicles = parseOpta(alarmItem.vehicles);
+            newAlarm.timePassed = now - alarmItem.date;
 
-            return newAlarm;
+            newAlarms.push(newAlarm);
         }
     }
 
-    return null;
+    return newAlarms;
 }
 
 function parseOpta(vehicles: string[]): string[] {
