@@ -1,6 +1,9 @@
 import { pullDiveraAlarms } from "./API";
-
+import {getVehicles} from "@/lib/db/queries";
 import { prisma } from "@/lib/db/prisma";
+
+
+const vehicles = await getVehicles();
 
 export enum KindOfAlarm {
     B = "B",
@@ -25,7 +28,7 @@ export async function showAlarms(): Promise<Alarm[] | null> {
 export async function filterAlarms(): Promise<Alarm[] | null> {
     const alarmItems = await pullDiveraAlarms();
     const newAlarms: Alarm[] = [];
-    const now = Math.floor(Date.now() / 1000);
+    const now = 1789152297; //Math.floor(Date.now() / 1000);
     const oneDay = 24 * 60 * 60;
 
     for (const alarmItem of alarmItems) {
@@ -34,9 +37,9 @@ export async function filterAlarms(): Promise<Alarm[] | null> {
             newAlarm.kindOfAlarm = alarmItem.title.split(" ")[0] as KindOfAlarm;
             newAlarm.alarmcode_id = alarmItem.alarmcode_id;
             newAlarm.title = alarmItem.title;
-
-            console.log(alarmItem.title)
-            newAlarm.vehicles = parseOpta(alarmItem.vehicles);
+            newAlarm.vehicles = (await Promise.all(
+                alarmItem.vehicles.map((vehicle) => parseOpta(vehicle))
+            )).filter((value) => value && value.trim().length > 0);
             newAlarm.timePassed = now - alarmItem.date;
 
             newAlarms.push(newAlarm);
@@ -46,11 +49,13 @@ export async function filterAlarms(): Promise<Alarm[] | null> {
     return newAlarms;
 }
 
-function parseOpta(vehicles: string[]): string[] {
-    return vehicles.map((vehicle) => opta(vehicle));
-}
+async function parseOpta(_vehicle: string): Promise<string> {
+    for (const vehicle of vehicles) {
+        if (_vehicle.includes(vehicle.opta)) {
+            return vehicle.opta;
+        }
+    }
 
-function opta(vehicle: string): string {
     return "";
 }
 

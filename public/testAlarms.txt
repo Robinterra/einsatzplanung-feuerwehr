@@ -18,7 +18,7 @@
       "BS FFw Watenbüttel",
       "BS FFw F-WFZ-Süd"
     ],
-    "date": 1789052123
+    "date": 1789152000
   },
   {
     "alarmcode_id": 15,
@@ -28,7 +28,7 @@
       "BS 80-44-01",
       "BS 09-19-56"
     ],
-    "date": 1789052123
+    "date": 1789142123
   },
   {
     "alarmcode_id": 19,

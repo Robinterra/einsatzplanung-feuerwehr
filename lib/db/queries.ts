@@ -1,5 +1,16 @@
 import { prisma } from "@/lib/db/prisma";
 
+export async function getVehicles() {
+    const vehicles = await prisma.vehicles.findMany({
+        select: {
+            opta: true,
+        },
+        where: { license_plate: { not: null } }
+    });
+
+    return vehicles;
+}
+
 export async function getAvailableMembers() {
     const members = await prisma.members.findMany({
         select: {
