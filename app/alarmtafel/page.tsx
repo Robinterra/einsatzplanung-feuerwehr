@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { verteileEinsatzkraefte } from "@/lib/algorithms/einteilung";
+import { verteileEinsatzkraefte } from "@/lib/algorithms/zufaelligeEinteilung";
 import { Alarm } from "@/lib/divera/alarm";
 
 async function fetchAlarms() {

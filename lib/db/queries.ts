@@ -1,5 +1,29 @@
 import { prisma } from "@/lib/db/prisma";
 
+export async function confirmVehicleInstruction(MemberId: string, vehicleOpta: string) {
+    const vehicle = await prisma.vehicles.findFirst({
+        select: {
+            id: true,
+        },
+        where: {
+            opta: vehicleOpta,
+        },
+    });
+
+    const instructions = await prisma.vehicle_instruction_logs.findFirst({
+        select: {
+            instructed: true,
+        },
+        where: {
+            member_id: MemberId,
+            vehicle_id: vehicle.id,
+        },
+        orderBy: { created_at: "desc" },
+    });
+
+    return instructions ?? null;
+}
+
 export async function getVehiclesWithSeats(vehicleOpta: string[]) {
     const vehicles = await prisma.vehicles.findMany({
         where: {
@@ -12,6 +36,8 @@ export async function getVehiclesWithSeats(vehicleOpta: string[]) {
             vehicle_seats: {
                 select: {
                     seat: true,
+                    agt: true,
+                    leadership: true,
                 },
                 orderBy: {
                     seat: "asc",
@@ -27,7 +53,11 @@ export async function getVehiclesWithSeats(vehicleOpta: string[]) {
         .filter((vehicle) => !!vehicle.opta)
         .map((vehicle) => ({
             opta: vehicle.opta!,
-            seats: vehicle.vehicle_seats.map((seat) => seat.seat),
+            seats: vehicle.vehicle_seats.map((seat) => ({
+                seat: seat.seat,
+                agt: seat.agt,
+                leadership: seat.leadership,
+            })),
         }));
 }
 
@@ -69,11 +99,11 @@ export async function getMemberQualifications(memberId: string) {
     const qualificationDetails = await prisma.trainings.findMany({
         select: {
             id: true,
-            name: true
+            key: true
         },
         where: {
             id: { in: qualifications.map(q => q.training_id) },
-            key : { in: ["AGT", "MA", "VF", "TF", "GF1", "GF2", "TH"] }
+            key : { in: ["AGT", "MA", "ZF1", "ZF2", "TF", "GF1", "GF2", "TH"] }
         }
     });
 

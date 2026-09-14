@@ -2,7 +2,8 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { verteileEinsatzkraefte } from "@/lib/algorithms/einteilung";
+//import { verteileEinsatzkraefte } from "@/lib/algorithms/zufaelligeEinteilung";
+import { verteileEinsatzkraefte} from "@/lib/algorithms/korrekteEinteilung";
 
 export default function Page() {
   const searchParams = useSearchParams();
