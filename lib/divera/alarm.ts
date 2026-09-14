@@ -1,6 +1,5 @@
 import { pullDiveraAlarms } from "./API";
 import {getVehicles} from "@/lib/db/queries";
-import { prisma } from "@/lib/db/prisma";
 
 
 const vehicles = await getVehicles();

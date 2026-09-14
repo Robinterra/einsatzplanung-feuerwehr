@@ -3,13 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { verteileEinsatzkraefte } from "@/lib/algorithms/einteilung";
-
-type AlarmEntry = {
-  alarmcode_id: number;
-  title: string;
-  kindOfAlarm: string | null;
-  timePassed: number;
-};
+import { Alarm } from "@/lib/divera/alarm";
 
 async function fetchAlarms() {
   const response = await fetch("/api/alarmtafel");
@@ -39,11 +33,11 @@ function StartButton({ title, onClick }: { title: string; onClick: () => void })
 
 export default function MyApp() {
   const router = useRouter();
-  const [alarms, setAlarms] = useState<AlarmEntry[]>([]);
+  const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
 
-  function handleStartAssignment(alarm: AlarmEntry) {
-    const selectedAlarm = [alarm];
+  function handleStartAssignment(alarm: Alarm) {
+    const selectedAlarm: Alarm = alarm;
     verteileEinsatzkraefte(selectedAlarm);
     router.push(`/alarmtafel/einteilungstafel?alarm=${encodeURIComponent(JSON.stringify(alarm))}`);
   }

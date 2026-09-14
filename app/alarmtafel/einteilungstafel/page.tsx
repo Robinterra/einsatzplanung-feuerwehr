@@ -8,7 +8,7 @@ export default function Page() {
   const searchParams = useSearchParams();
   const [alarmTitle, setAlarmTitle] = useState<string>("");
   const [alarm, setAlarm] = useState<any | null>(null);
-  const [result, setResult] = useState<any[]>([]);
+  const [result, setResult] = useState<Record<string, Record<string, string | null>> | null>(null);
 
   useEffect(() => {
     async function loadResult() {
@@ -21,7 +21,7 @@ export default function Page() {
         setAlarmTitle(selectedAlarm.title);
       }
 
-      const assigned = await verteileEinsatzkraefte(selectedAlarm ? [selectedAlarm] : []);
+      const assigned = await verteileEinsatzkraefte(selectedAlarm ?? []);
       setResult(assigned);
     }
 
@@ -30,6 +30,9 @@ export default function Page() {
 
   const rows = ["GF", "MA", "ME", "ATF", "ATM", "WTF", "WTM", "STF", "STM"];
   const vehicleColumns = alarm?.vehicles ?? [];
+  const vehicleSeatMap = Object.fromEntries(
+    (alarm?.vehicles ?? []).map((vehicle: string) => [vehicle, true]),
+  );
 
   return (
     <div>
@@ -53,9 +56,25 @@ export default function Page() {
               <td style={{ border: "1px solid #ccc", padding: "0.5rem", fontWeight: 600 }}>
                 {row}
               </td>
-              {vehicleColumns.map((_: string, index: number) => (
-                <td key={`${row}-${index}`} style={{ border: "1px solid #ccc", padding: "0.5rem" }}></td>
-              ))}
+              {vehicleColumns.map((vehicle: string, index: number) => {
+                const assignedMember = result?.[vehicle]?.[row];
+                const seatExistsForVehicle = row in (result?.[vehicle] ?? {});
+
+                return (
+                  <td
+                    key={`${row}-${index}`}
+                    style={{
+                      border: "1px solid #ccc",
+                      padding: "0.5rem",
+                      background: !seatExistsForVehicle
+                        ? "repeating-linear-gradient(135deg, #f3f3f3 0, #f3f3f3 6px, #d9d9d9 6px, #d9d9d9 12px)"
+                        : "transparent",
+                    }}
+                  >
+                    {assignedMember ?? ""}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

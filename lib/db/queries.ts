@@ -1,5 +1,36 @@
 import { prisma } from "@/lib/db/prisma";
 
+export async function getVehiclesWithSeats(vehicleOpta: string[]) {
+    const vehicles = await prisma.vehicles.findMany({
+        where: {
+            opta: {
+                in: vehicleOpta,
+            },
+        },
+        select: {
+            opta: true,
+            vehicle_seats: {
+                select: {
+                    seat: true,
+                },
+                orderBy: {
+                    seat: "asc",
+                },
+            },
+        },
+        orderBy: {
+            opta: "asc",
+        },
+    });
+
+    return vehicles
+        .filter((vehicle) => !!vehicle.opta)
+        .map((vehicle) => ({
+            opta: vehicle.opta!,
+            seats: vehicle.vehicle_seats.map((seat) => seat.seat),
+        }));
+}
+
 export async function getVehicles() {
     const vehicles = await prisma.vehicles.findMany({
         select: {
@@ -15,7 +46,9 @@ export async function getAvailableMembers() {
     const members = await prisma.members.findMany({
         select: {
             id: true,
-            personnel_nr: true
+            first_name: true,
+            last_name: true,
+        
         },
         where: { status: "active" }
     });
