@@ -1,12 +1,12 @@
 "use server"
-import { getAvailableMembers, getVehiclesWithSeats, getMemberQualifications, confirmVehicleInstruction } from "../db/queries";
+import { getAvailableMembers, getVehiclesWithSeats, getMemberQualifications, confirmVehicleInstruction, getAvailableMemberWithQualifications } from "../db/queries";
 import { Alarm } from "../divera/alarm";
 
 type SeatAssignments = Record<string, string | null>;
 type Einteilung = Record<string, SeatAssignments>;
 
 export async function verteileEinsatzkraefte(alarm: Alarm ): Promise<Einteilung> {
-  const availableMembers = [...(await getAvailableMembers())];
+  const availableMembers = await getAvailableMemberWithQualifications();
   const einteilung: Einteilung = {};
 
   const vehiclesWithSeats = await getVehiclesWithSeats(alarm.vehicles ?? []);
@@ -33,26 +33,25 @@ export async function verteileEinsatzkraefte(alarm: Alarm ): Promise<Einteilung>
           break;
         }
 
-        const qualifications = await getMemberQualifications(member.id);
 
-        if (seat.leadership === "TF" && !qualifications.some(q => q.key === "TF")) {
+        if (seat.leadership === "TF" && !member.members.member_trainings_view.some(training => training.training.key === "TF")) {
           i++;
           continue;
         }
-        if (seat.leadership === "GF" && !qualifications.some(q => q.key === "GF1") && !qualifications.some(q => q.key === "GF2")) {
+        if (seat.leadership === "GF" && !member.members.member_trainings_view.some(training => training.training.key === "GF1") && !member.members.member_trainings_view.some(training => training.training.key === "GF2")) {
           i++;
           continue;
         }
-        if (seat.leadership === "ZF" && !qualifications.some(q => q.key === "ZF1") && !qualifications.some(q => q.key === "ZF2")) {
+        if (seat.leadership === "ZF" && !member.members.member_trainings_view.some(training => training.training.key === "ZF1") && !member.members.member_trainings_view.some(training => training.training.key === "ZF2")) {
           i++;
           continue;
         }
-        if (seat.agt && !qualifications.some(q => q.key === "AGT")) {
+        if (seat.agt && !member.members.member_trainings_view.some(training => training.training.key === "AGT")) {
           i++;
           continue;
         }
-        if (seat.seat === "MA" && !qualifications.some(q => q.key === "MA")) {
-          if (!await confirmVehicleInstruction(member.id, vehicle.opta)) {
+        if (seat.seat === "MA" && !member.members.member_trainings_view.some(training => training.training.key === "MA")) {
+          if (member.members.vehicle_instructions_view.some(instruction => instruction.vehicles.opta === vehicle.opta)) {
             i++;
             continue;
           }

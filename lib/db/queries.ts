@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 
+
+
 export async function confirmVehicleInstruction(MemberId: string, vehicleOpta: string) {
     const vehicle = await prisma.vehicles.findFirst({
         select: {
@@ -72,6 +74,69 @@ export async function getVehicles() {
     return vehicles;
 }
 
+export async function getAvailableMemberWithQualifications() {
+    const members = await prisma.member_presence_view.findMany({
+        where: {
+            present: 1,
+        },
+        select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            members: { select: {
+                member_trainings_view: {
+                    select: {
+                        training_id: true,
+                        training: {
+                            select: {
+                                key: true
+                        }
+                    },
+                },
+                where: {
+                    status: "passed",
+                    OR: [
+                        {
+                            expiration: null,
+                        },
+                        {
+                            expiration: {
+                                gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                            },
+                        },
+                    ],
+                },
+            },
+                vehicle_instructions_view: {
+                    select: {
+                        vehicle_id: true,
+                        vehicles: {
+                            select: {
+                                opta: true
+                            }
+                        }
+
+                    },
+                    where: {
+                        OR: [
+                                {
+                                suspended_until: null,
+                                },
+                                {
+                                    suspended_until: {
+                                        lt: new Date(new Date().setHours(0, 0, 0, 0)),
+                                    },
+                                },
+                            ],
+                }   
+                },
+            }},
+        
+    
+}
+    });
+    return members;
+}
 export async function getAvailableMembers() {
     const members = await prisma.members.findMany({
         select: {

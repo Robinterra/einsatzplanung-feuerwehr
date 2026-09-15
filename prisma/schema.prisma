@@ -54,8 +54,8 @@ model events {
   event_responses         event_responses[]
   event_responsibles      event_responsibles[]
   event_shift             event_shift[]
-  members                 auth_entities            @relation(fields: [created_by], references: [id], map: "events_members_id_fk")
   divera_event_profile    divera_event_profile?    @relation(fields: [divera_profile_id], references: [id], map: "events_divera_event_profile_id_fk")
+  members                 auth_entities            @relation(fields: [created_by], references: [id], map: "events_members_id_fk")
   event_planning_sessions event_planning_sessions? @relation(fields: [planning_session_id], references: [id], map: "events_planning_session_fk")
   food_orders             food_orders[]
 
@@ -189,6 +189,8 @@ model members {
   lockers_lockers_member_idTomembers                                  lockers[]                      @relation("lockers_member_idTomembers")
   member_attribute_logs                                               member_attribute_logs[]        @relation("member_attribute_logs_member_idTomembers")
   member_presence_logs                                                member_presence_logs[]
+  member_presence_view                                                 member_presence_view?
+  member_trainings_view                                                member_trainings_view[]
   training_logs                                                       member_training_logs[]         @relation("member_training_logs_member_idTomembers")
   auth_entities_members_entity_created_idToauth_entities              auth_entities?                 @relation("members_entity_created_idToauth_entities", fields: [entity_created_id], references: [id], map: "members_auth_entities_id_fk")
   members                                                             members?                       @relation("membersTomembers", fields: [created_by], references: [id], map: "members_members_id_fk")
@@ -199,6 +201,7 @@ model members {
   shop_vendor_orders                                                  shop_vendor_orders[]
   ticket_assignments                                                  ticket_assignments[]
   tickets                                                             tickets[]
+  vehicle_instructions_view                                           vehicle_instructions_view[]
   vehicle_instruction_logs                                            vehicle_instruction_logs[]     @relation("vehicle_instruction_logs_member_idTomembers")
   vehicle_inventory_vehicle_inventory_inserted_byTomembers            vehicle_inventory[]            @relation("vehicle_inventory_inserted_byTomembers")
   vehicle_inventory_vehicle_inventory_modified_byTomembers            vehicle_inventory[]            @relation("vehicle_inventory_modified_byTomembers")
@@ -287,6 +290,7 @@ model trainings {
   divera_trainings          divera_trainings[]
   feueron_training_mappings feueron_training_mappings[]
   member_training_logs      member_training_logs[]
+  member_trainings_view     member_trainings_view[]
 }
 
 model vehicles {
@@ -312,6 +316,7 @@ model vehicles {
   checklists               checklists[]
   defect_reports           defect_reports[]
   vehicle_instruction_logs vehicle_instruction_logs[]
+  vehicle_instructions_view      vehicle_instructions_view[]
   vehicle_inventory        vehicle_inventory[]
   vehicle_logs             vehicle_logs[]
   vehicle_seats            vehicle_seats[]
@@ -655,8 +660,8 @@ model vehicle_instruction_logs {
   instructed                                          Boolean       @default(true)
   suspended_until                                     DateTime?     @db.Date
   created_by_entity_id                                String        @db.VarChar(36)
-  auth_entities                                       auth_entities @relation(fields: [created_by_entity_id], references: [id], map: "vehicle_instruction_logs_auth_entities_id_fk")
-  members_vehicle_instruction_logs_member_idTomembers members       @relation("vehicle_instruction_logs_member_idTomembers", fields: [member_id], references: [id], onDelete: Cascade, map: "vehicle_instruction_logs_members_id_fk")
+  members_vehicle_instruction_logs_member_idTomembers members       @relation("vehicle_instruction_logs_member_idTomembers", fields: [member_id], references: [id], onUpdate: Restrict, map: "vehicle_instruction_logs_members_id_fk")
+  auth_entities                                       auth_entities @relation(fields: [created_by_entity_id], references: [id], onUpdate: Restrict, map: "vehicle_instruction_logs_auth_entities_id_fk")
   vehicles                                            vehicles      @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, map: "vehicle_instruction_logs_vehicles_id_fk")
 
   @@index([member_id], map: "vehicle_instruction_logs_members_id_fk")
@@ -1645,6 +1650,46 @@ model workflows {
   @@index([parent_workflow_id], map: "workflows_workflows_id_fk")
 }
 
+view member_trainings_view {
+  id                String                       @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  member_id         String                       @db.VarChar(36)
+  training_id       String                       @db.VarChar(36)
+  status            member_trainings_view_status
+  timestamp         DateTime                     @default(now()) @db.DateTime(0)
+  created_by        String                       @db.VarChar(36)
+  expiration        DateTime?                    @db.Date
+  source            member_trainings_view_source
+  entity_created_id String                       @db.VarChar(36)
+  members           members                      @relation(fields: [member_id], references: [id])
+  training         trainings                    @relation(fields: [training_id], references: [id])
+}
+
+view vehicle_instructions_view {
+  id                String    @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  vehicle_id        String    @db.VarChar(36)
+  member_id         String    @db.VarChar(36)
+  created_at        DateTime  @default(now()) @db.DateTime(0)
+  created_by        String?   @db.VarChar(36)
+  suspended_until   DateTime? @db.Date
+  entity_created_id String    @db.VarChar(36)
+  members           members   @relation(fields: [member_id], references: [id])
+  vehicles          vehicles  @relation(fields: [vehicle_id], references: [id])
+}
+
+view member_presence_view {
+  id                 String                           @unique @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  first_name         String                           @db.VarChar(255)
+  last_name          String                           @db.VarChar(255)
+  personnel_nr       Int?
+  gender             member_presence_view_gender?
+  image_url          String?                          @db.VarChar(500)
+  department         member_presence_view_department?
+  presence_timestamp DateTime?                        @default(now()) @db.Timestamp(0)
+  present            Int                              @default(0)
+  seat_id            String?                          @db.VarChar(36)
+  members            members                          @relation(fields: [id], references: [id])
+}
+
 enum event_responses_planned_participation {
   yes
   no
@@ -2218,4 +2263,31 @@ enum events_status {
   planned
   open
   closed
+}
+
+enum member_trainings_view_status {
+  attended
+  passed
+  not_passed @map("not-passed")
+}
+
+enum member_presence_view_gender {
+  male
+  female
+  other
+}
+
+enum member_presence_view_department {
+  Einsatzabteilung_FF  @map("Einsatzabteilung FF")
+  Altersabteilung
+  F_rdernde_Mitglieder @map("Fördernde Mitglieder")
+  Jugendfeuerwehr
+  Kinderfeuerwehr
+  Musikzug
+  Besondere_Abteilung  @map("Besondere Abteilung")
+}
+
+enum member_trainings_view_source {
+  feueron
+  app
 }
