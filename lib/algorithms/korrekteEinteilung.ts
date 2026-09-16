@@ -1,68 +1,66 @@
 "use server"
-import { getAvailableMembers, getVehiclesWithSeats, getMemberQualifications, confirmVehicleInstruction, getAvailableMemberWithQualifications } from "../db/queries";
+import {
+  getAvailableMembers,
+  getVehiclesWithSeats,
+  getMemberQualifications,
+  confirmVehicleInstruction,
+  getAvailableMemberWithQualifications,
+  assignMembersToSeats,
+} from "../db/queries";
 import { Alarm } from "../divera/alarm";
+import { verifymemberQualificationsForSeat } from "./rules";
 
 type SeatAssignments = Record<string, string | null>;
-type Einteilung = Record<string, SeatAssignments>;
 
-export async function verteileEinsatzkraefte(alarm: Alarm ): Promise<Einteilung> {
+
+export async function verteileEinsatzkraefte(alarm: Alarm )
+{
+  console.log("Verteile Einsatzkräfte für Alarm:", alarm);
   const availableMembers = await getAvailableMemberWithQualifications();
-  const einteilung: Einteilung = {};
+  const einteilung: SeatAssignments = {};
 
   const vehiclesWithSeats = await getVehiclesWithSeats(alarm.vehicles ?? []);
 
-  for (const vehicle of vehiclesWithSeats) {
-    if (!vehicle.opta) {
+  for (const vehicle of vehiclesWithSeats) 
+  {
+    if (!vehicle.opta) 
+    {
       continue;
     }
 
-    if (!einteilung[vehicle.opta]) {
-      einteilung[vehicle.opta] = {};
-    }
+    for (const seat of vehicle.seats) 
+    {
+      if (availableMembers.length === 0) 
+        {
+          return; // No more available members to assign
+        }
 
-    for (const seat of vehicle.seats) {
       let assigned = false;
       let i = 0;
-      while (!assigned) {
-        if (availableMembers.length === 0) {
-          break;
-        }
+      while (!assigned) 
+      {
 
         const member = availableMembers[i];
-        if (!member) {
-          break;
+
+        if (!member) 
+        {
+          break // No more fitting member for this seat
         }
 
-
-        if (seat.leadership === "TF" && !member.members.member_trainings_view.some(training => training.training.key === "TF")) {
+        if (!await verifymemberQualificationsForSeat(member, vehicle, seat)) 
+        {
           i++;
           continue;
-        }
-        if (seat.leadership === "GF" && !member.members.member_trainings_view.some(training => training.training.key === "GF1") && !member.members.member_trainings_view.some(training => training.training.key === "GF2")) {
-          i++;
-          continue;
-        }
-        if (seat.leadership === "ZF" && !member.members.member_trainings_view.some(training => training.training.key === "ZF1") && !member.members.member_trainings_view.some(training => training.training.key === "ZF2")) {
-          i++;
-          continue;
-        }
-        if (seat.agt && !member.members.member_trainings_view.some(training => training.training.key === "AGT")) {
-          i++;
-          continue;
-        }
-        if (seat.seat === "MA" && !member.members.member_trainings_view.some(training => training.training.key === "MA")) {
-          if (member.members.vehicle_instructions_view.some(instruction => instruction.vehicles.opta === vehicle.opta)) {
-            i++;
-            continue;
-          }
         }
 
         assigned = true;
         availableMembers.splice(i, 1); // Remove the assigned member from the list
-        einteilung[vehicle.opta][seat.seat] = `${member.last_name}, ${member.first_name}`;
+        
+        einteilung[`${seat.id}`] = `${member.id}`;
       }
     }
   }
-
-  return einteilung;
+  console.log("Einteilung:", einteilung);
+  await assignMembersToSeats(einteilung);
+  return;
 }

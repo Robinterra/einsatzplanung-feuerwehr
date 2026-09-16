@@ -2,8 +2,6 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-//import { verteileEinsatzkraefte } from "@/lib/algorithms/zufaelligeEinteilung";
-import { verteileEinsatzkraefte} from "@/lib/algorithms/korrekteEinteilung";
 
 export default function Page() {
   const searchParams = useSearchParams();
@@ -22,8 +20,18 @@ export default function Page() {
         setAlarmTitle(selectedAlarm.title);
       }
 
-      const assigned = await verteileEinsatzkraefte(selectedAlarm ?? []);
-      setResult(assigned);
+      const vehicles = selectedAlarm?.vehicles ?? [];
+      const response = await fetch(
+        `/api/alarmtafel/einteilungstafel?${vehicles
+          .map((vehicle: string) => `vehicle=${encodeURIComponent(vehicle)}`)
+          .join("&")}`,
+      );
+
+      if (!response.ok) {
+        throw new Error("Einteilung konnte nicht abgerufen werden");
+      }
+
+      setResult(await response.json());
     }
 
     loadResult();
@@ -31,10 +39,6 @@ export default function Page() {
 
   const rows = ["GF", "MA", "ME", "ATF", "ATM", "WTF", "WTM", "STF", "STM"];
   const vehicleColumns = alarm?.vehicles ?? [];
-  const vehicleSeatMap = Object.fromEntries(
-    (alarm?.vehicles ?? []).map((vehicle: string) => [vehicle, true]),
-  );
-
   return (
     <div>
       <h1>Einteilungstafel</h1>
