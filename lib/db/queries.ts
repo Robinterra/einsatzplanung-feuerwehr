@@ -52,7 +52,7 @@ export async function confirmVehicleInstruction(MemberId: string, vehicleOpta: s
         },
         where: {
             member_id: MemberId,
-            vehicle_id: vehicle.id,
+            vehicle_id: vehicleId,
         },
         orderBy: { created_at: "desc" },
     });
@@ -60,14 +60,15 @@ export async function confirmVehicleInstruction(MemberId: string, vehicleOpta: s
     return instructions ?? null;
 }
 
-export async function getVehiclesWithSeats(vehicleOpta: string[]) {
+export async function getVehiclesWithSeats(vehicleID: string[]) {
     const vehicles = await prisma.vehicles.findMany({
         where: {
-            opta: {
-                in: vehicleOpta,
+            id: {
+                in: vehicleID,
             },
         },
         select: {
+            id: true,
             opta: true,
             vehicle_seats: {
                 select: {
@@ -89,6 +90,7 @@ export async function getVehiclesWithSeats(vehicleOpta: string[]) {
     return vehicles
         .filter((vehicle) => !!vehicle.opta)
         .map((vehicle) => ({
+            id: vehicle.id,
             opta: vehicle.opta!,
             seats: vehicle.vehicle_seats.map((seat) => ({
                 id: seat.id,
@@ -171,69 +173,35 @@ export async function getVehicles() {
     return vehicles;
 }
 
-export async function getAvailableMemberWithQualifications() {
-    const members = await prisma.member_presence_view.findMany({
+export async function getIDsOfVehicles(vehicleOpta: string[]) {
+    const vehicles = await prisma.vehicles.findMany({
         where: {
-            present: 1,
+            opta: {
+                in: vehicleOpta
+            },
         },
         select: {
-            id: true,
-            first_name: true,
-            last_name: true,
-            members: { select: {
-                member_trainings_view: {
-                    select: {
-                        training_id: true,
-                        training: {
-                            select: {
-                                key: true
-                        }
-                    },
-                },
-                where: {
-                    status: "passed",
-                    OR: [
-                        {
-                            expiration: null,
-                        },
-                        {
-                            expiration: {
-                                gte: new Date(new Date().setHours(0, 0, 0, 0)),
-                            },
-                        },
-                    ],
-                },
-            },
-                vehicle_instructions_view: {
-                    select: {
-                        vehicle_id: true,
-                        vehicles: {
-                            select: {
-                                opta: true
-                            }
-                        }
-
-                    },
-                    where: {
-                        OR: [
-                                {
-                                suspended_until: null,
-                                },
-                                {
-                                    suspended_until: {
-                                        lt: new Date(new Date().setHours(0, 0, 0, 0)),
-                                    },
-                                },
-                            ],
-                }   
-                },
-            }},
-        
-    
-}
+            id: true
+        },
     });
-    return members;
+
+    return vehicles.map(vehicle => vehicle.id);
 }
+
+export async function getOpta(vehicleIds: string[]) {
+    const vehicles = await prisma.vehicles.findMany({
+        select: {
+            id : true,
+            opta: true
+        },
+        where: {
+            id: { in: vehicleIds }
+        },
+    });
+
+    return vehicles
+}
+
 export async function getAvailableMembers() {
     const members = await prisma.members.findMany({
         select: {

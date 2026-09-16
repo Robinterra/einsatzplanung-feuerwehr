@@ -7,6 +7,7 @@ export default function Page() {
   const searchParams = useSearchParams();
   const [alarmTitle, setAlarmTitle] = useState<string>("");
   const [alarm, setAlarm] = useState<any | null>(null);
+  const [vehicleOptas, setVehicleOptas] = useState<Record<string, string>>({});
   const [result, setResult] = useState<Record<string, Record<string, string | null>> | null>(null);
 
   useEffect(() => {
@@ -15,6 +16,25 @@ export default function Page() {
       const selectedAlarm = alarmParam ? JSON.parse(decodeURIComponent(alarmParam)) : null;
 
       setAlarm(selectedAlarm);
+
+      const vehicleIds = selectedAlarm?.vehicles ?? [];
+      if (vehicleIds.length > 0) {
+        const vehicleResponse = await fetch(`/api/alarmtafel/einteilungstafel?ids=${vehicleIds.join(",")}`);
+        if (!vehicleResponse.ok) {
+          throw new Error("Fahrzeuge konnten nicht abgerufen werden");
+        }
+
+        const vehicles: Array<{ id: string; opta: string | null }> = await vehicleResponse.json();
+        setVehicleOptas(
+          Object.fromEntries(
+            vehicles
+              .filter((vehicle) => vehicle.opta)
+              .map((vehicle) => [vehicle.id, vehicle.opta!]),
+          ),
+        );
+      } else {
+        setVehicleOptas({});
+      }
 
       if (selectedAlarm?.title) {
         setAlarmTitle(selectedAlarm.title);
@@ -50,7 +70,7 @@ export default function Page() {
             <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>Position</th>
             {vehicleColumns.map((vehicle: string, index: number) => (
               <th key={`${vehicle}-${index}`} style={{ border: "1px solid #ccc", padding: "0.5rem" }}>
-                {vehicle}
+                {vehicleOptas[vehicle] ?? vehicle}
               </th>
             ))}
           </tr>
@@ -62,8 +82,9 @@ export default function Page() {
                 {row}
               </td>
               {vehicleColumns.map((vehicle: string, index: number) => {
-                const assignedMember = result?.[vehicle]?.[row];
-                const seatExistsForVehicle = row in (result?.[vehicle] ?? {});
+                const opta = vehicleOptas[vehicle];
+                const assignedMember = opta ? result?.[opta]?.[row] : undefined;
+                const seatExistsForVehicle = opta ? row in (result?.[opta] ?? {}) : false;
 
                 return (
                   <td
