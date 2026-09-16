@@ -1,5 +1,5 @@
 import { pullDiveraAlarms } from "./API";
-import {getVehicles} from "@/lib/db/queries";
+import {getVehicles, getIDsOfVehicles} from "@/lib/db/queries";
 
 
 const vehicles = await getVehicles();
@@ -36,9 +36,10 @@ export async function filterAlarms(): Promise<Alarm[] | null> {
             newAlarm.kindOfAlarm = alarmItem.title.split(" ")[0] as KindOfAlarm;
             newAlarm.alarmcode_id = alarmItem.alarmcode_id;
             newAlarm.title = alarmItem.title;
-            newAlarm.vehicles = (await Promise.all(
+            const vehicleOptas = (await Promise.all(
                 alarmItem.vehicles.map((vehicle) => parseOpta(vehicle))
             )).filter((value) => value && value.trim().length > 0);
+            newAlarm.vehicles = await getIDsOfVehicles(vehicleOptas);
             newAlarm.timePassed = now - alarmItem.date;
 
             newAlarms.push(newAlarm);

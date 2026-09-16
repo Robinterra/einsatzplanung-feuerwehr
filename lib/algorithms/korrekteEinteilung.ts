@@ -52,7 +52,7 @@ export async function verteileEinsatzkraefte(alarm: Alarm ): Promise<Einteilung>
           continue;
         }
         if (seat.seat === "MA" && !qualifications.some(q => q.key === "MA")) {
-          if (!await confirmVehicleInstruction(member.id, vehicle.opta)) {
+          if (!await confirmVehicleInstruction(member.id, vehicle.id)) {
             i++;
             continue;
           }

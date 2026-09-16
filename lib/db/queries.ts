@@ -1,22 +1,13 @@
 import { prisma } from "@/lib/db/prisma";
 
-export async function confirmVehicleInstruction(MemberId: string, vehicleOpta: string) {
-    const vehicle = await prisma.vehicles.findFirst({
-        select: {
-            id: true,
-        },
-        where: {
-            opta: vehicleOpta,
-        },
-    });
-
+export async function confirmVehicleInstruction(MemberId: string, vehicleId: string) {
     const instructions = await prisma.vehicle_instruction_logs.findFirst({
         select: {
             instructed: true,
         },
         where: {
             member_id: MemberId,
-            vehicle_id: vehicle.id,
+            vehicle_id: vehicleId,
         },
         orderBy: { created_at: "desc" },
     });
@@ -24,14 +15,15 @@ export async function confirmVehicleInstruction(MemberId: string, vehicleOpta: s
     return instructions ?? null;
 }
 
-export async function getVehiclesWithSeats(vehicleOpta: string[]) {
+export async function getVehiclesWithSeats(vehicleID: string[]) {
     const vehicles = await prisma.vehicles.findMany({
         where: {
-            opta: {
-                in: vehicleOpta,
+            id: {
+                in: vehicleID,
             },
         },
         select: {
+            id: true,
             opta: true,
             vehicle_seats: {
                 select: {
@@ -52,6 +44,7 @@ export async function getVehiclesWithSeats(vehicleOpta: string[]) {
     return vehicles
         .filter((vehicle) => !!vehicle.opta)
         .map((vehicle) => ({
+            id: vehicle.id,
             opta: vehicle.opta!,
             seats: vehicle.vehicle_seats.map((seat) => ({
                 seat: seat.seat,
@@ -70,6 +63,35 @@ export async function getVehicles() {
     });
 
     return vehicles;
+}
+
+export async function getIDsOfVehicles(vehicleOpta: string[]) {
+    const vehicles = await prisma.vehicles.findMany({
+        where: {
+            opta: {
+                in: vehicleOpta
+            },
+        },
+        select: {
+            id: true
+        },
+    });
+
+    return vehicles.map(vehicle => vehicle.id);
+}
+
+export async function getOpta(vehicleIds: string[]) {
+    const vehicles = await prisma.vehicles.findMany({
+        select: {
+            id : true,
+            opta: true
+        },
+        where: {
+            id: { in: vehicleIds }
+        },
+    });
+
+    return vehicles
 }
 
 export async function getAvailableMembers() {
