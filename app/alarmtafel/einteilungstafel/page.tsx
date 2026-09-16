@@ -1,68 +1,27 @@
-"use client";
+import { getOpta, getPresentMemberAssignments } from "@/lib/db/queries";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+type PageProps = {
+  searchParams: Promise<{ alarm?: string }>;
+};
 
-export default function Page() {
-  const searchParams = useSearchParams();
-  const [alarmTitle, setAlarmTitle] = useState<string>("");
-  const [alarm, setAlarm] = useState<any | null>(null);
-  const [vehicleOptas, setVehicleOptas] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<Record<string, Record<string, string | null>> | null>(null);
-
-  useEffect(() => {
-    async function loadResult() {
-      const alarmParam = searchParams.get("alarm");
-      const selectedAlarm = alarmParam ? JSON.parse(decodeURIComponent(alarmParam)) : null;
-
-      setAlarm(selectedAlarm);
-
-      const vehicleIds = selectedAlarm?.vehicles ?? [];
-      if (vehicleIds.length > 0) {
-        const vehicleResponse = await fetch(`/api/alarmtafel/einteilungstafel?ids=${vehicleIds.join(",")}`);
-        if (!vehicleResponse.ok) {
-          throw new Error("Fahrzeuge konnten nicht abgerufen werden");
-        }
-
-        const vehicles: Array<{ id: string; opta: string | null }> = await vehicleResponse.json();
-        setVehicleOptas(
-          Object.fromEntries(
-            vehicles
-              .filter((vehicle) => vehicle.opta)
-              .map((vehicle) => [vehicle.id, vehicle.opta!]),
-          ),
-        );
-      } else {
-        setVehicleOptas({});
-      }
-
-      if (selectedAlarm?.title) {
-        setAlarmTitle(selectedAlarm.title);
-      }
-
-      const vehicles = selectedAlarm?.vehicles ?? [];
-      const response = await fetch(
-        `/api/alarmtafel/einteilungstafel?${vehicles
-          .map((vehicle: string) => `vehicle=${encodeURIComponent(vehicle)}`)
-          .join("&")}`,
-      );
-
-      if (!response.ok) {
-        throw new Error("Einteilung konnte nicht abgerufen werden");
-      }
-
-      setResult(await response.json());
-    }
-
-    loadResult();
-  }, [searchParams]);
+export default async function Page({ searchParams }: PageProps) {
+  const { alarm: alarmParam } = await searchParams;
+  const alarm = alarmParam ? JSON.parse(alarmParam) : null;
+  const vehicleIds: string[] = alarm?.vehicles ?? [];
+  const vehicles = await getOpta(vehicleIds);
+  const vehicleOptas = Object.fromEntries(
+    vehicles
+      .filter((vehicle) => vehicle.opta)
+      .map((vehicle) => [vehicle.id, vehicle.opta!]),
+  );
+  const result = await getPresentMemberAssignments(vehicleIds);
 
   const rows = ["GF", "MA", "ME", "ATF", "ATM", "WTF", "WTM", "STF", "STM"];
-  const vehicleColumns = alarm?.vehicles ?? [];
+  const vehicleColumns = vehicleIds;
   return (
     <div>
       <h1>Einteilungstafel</h1>
-      {alarmTitle && <h2>{alarmTitle}</h2>}
+      {alarm?.title && <h2>{alarm.title}</h2>}
 
       <table style={{ borderCollapse: "collapse", width: "100%", maxWidth: 900 }}>
         <thead>
