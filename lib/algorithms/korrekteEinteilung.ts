@@ -1,8 +1,6 @@
 "use server"
 import {
-  getAvailableMembers,
   getVehiclesWithSeats,
-  getMemberQualifications,
   confirmVehicleInstruction,
   getAvailableMemberWithQualifications,
   assignMembersToSeats,
