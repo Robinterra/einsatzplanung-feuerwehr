@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { verteileEinsatzkraefte } from "@/lib/algorithms/korrekteEinteilung";
 import { Alarm } from "@/lib/divera/alarm";
 
 async function fetchAlarms() {
@@ -36,11 +35,18 @@ export default function MyApp() {
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
 
-  async function handleStartAssignment(alarm: Alarm) {
-    const selectedAlarm: Alarm = alarm;
-    await verteileEinsatzkraefte(selectedAlarm);
-    console.log("Einteilung gestartet für Alarm:", selectedAlarm);
-    router.push(`/alarmtafel/einteilungstafel?alarm=${encodeURIComponent(JSON.stringify(alarm))}`);
+  function handleStartAssignment(alarm: Alarm) {
+    const selectedAlarm = {
+      alarmcode_id: alarm.alarmcode_id,
+      title: alarm.title,
+      kindOfAlarm: alarm.kindOfAlarm,
+      vehicles: alarm.vehicles,
+      timePassed: alarm.timePassed,
+    } satisfies Alarm;
+
+    router.push(
+      `/alarmtafel/einteilungstafel?alarm=${encodeURIComponent(JSON.stringify(selectedAlarm))}`,
+    );
   }
 
   async function getAlarms() {
