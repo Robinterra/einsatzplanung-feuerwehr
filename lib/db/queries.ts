@@ -5,6 +5,7 @@ export async function getAvailableMemberWithQualifications() {
     const members = await prisma.member_presence_view.findMany({
         where: {
             present: 1,
+            seat_id: null,
         },
         select: {
             id: true,
@@ -230,6 +231,7 @@ export async function getPresentMemberAssignments(vehicleID: string[]) {
 export async function getVehicles() {
     const vehicles = await prisma.vehicles.findMany({
         select: {
+            id: true,
             opta: true,
         },
         where: { license_plate: { not: null } }

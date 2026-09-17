@@ -1,4 +1,4 @@
-export async function verifymemberQualificationsForSeat(member: any, vehicle: any, seat: any): Promise<boolean>
+export function verifymemberQualificationsForSeat(member: any, vehicle: any, seat: any): boolean
 {
     if (seat.leadership === "TF" && !member.members.member_trainings_view.some(training => training.training.key === "TF"))
     {
