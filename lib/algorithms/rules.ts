@@ -12,8 +12,8 @@ export async function verifymemberQualificationsForSeat(member: any, vehicle: an
     {
         return false;
     }
-    if (seat.agt && !member.members.member_trainings_view.some(training => training.training.key === "AGT"))
-    {//To-Do: gesamte tauglichkeit testen
+    if (seat.agt && !checkAGTQualification(member))
+    {
         return false;
     }
     if (seat.seat === "MA" && !member.members.vehicle_instructions_view.some(instruction => instruction.vehicles.opta === vehicle.opta))
@@ -22,4 +22,11 @@ export async function verifymemberQualificationsForSeat(member: any, vehicle: an
     }
 
     return true;
+}
+
+async function checkAGTQualification(member: any): Promise<boolean> {
+    const requiredRequirements = ["AGT", "AGT-UW", "AGT-Strecke", "G26.3"];
+    const exerciseOrOperation = ["AGT-Übung", "AGT-Einsatz"];
+    return requiredRequirements.every(requirement => member.members.member_trainings_view.some(training => training.training.key === requirement))
+        && exerciseOrOperation.some(requirement => member.members.member_trainings_view.some(training => training.training.key === requirement));
 }
