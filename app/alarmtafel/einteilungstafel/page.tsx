@@ -1,5 +1,6 @@
 import AssignmentStarter from "./AssignmentStarter";
-import { getPresentMemberAssignments, getVehicles } from "@/lib/db/queries";
+import { getMemberInformation, getPresentMemberAssignments, getVehicles} from "@/lib/db/queries";
+import { MemberTag, NameTag } from "./nameTag";
 type PageProps = {
   searchParams: Promise<{ alarm?: string }>;
 };
@@ -7,9 +8,25 @@ type PageProps = {
 export default async function Page({ searchParams }: PageProps) {
   const { alarm: alarmParam } = await searchParams;
   const alarm = alarmParam ? JSON.parse(alarmParam) : null;
-  const vehicleIds: string[] = alarm?.vehicles ?? [];
+  const alarmedVehicleIds: string[] = alarm?.vehicles ?? [];
   const vehicles = await getVehicles();
   const result = await getPresentMemberAssignments(vehicles.map((vehicle) => vehicle.id));
+  const memberIds = Array.from(
+    new Set(
+      Object.values(result)
+        .flatMap((vehicleAssignments) => Object.values(vehicleAssignments))
+        .filter((memberId): memberId is string => memberId !== null),
+    ),
+  );
+  const memberTags = (
+    await Promise.all(
+      memberIds.map(async (memberId): Promise<MemberTag | null> => {
+        const memberInfo = await getMemberInformation(memberId);
+        return memberInfo ? { id: memberId, name: memberInfo.name, trainings: memberInfo.trainings } : null;
+      }),
+    )
+  ).filter((member): member is MemberTag => member !== null);
+  const memberTagsById = new Map(memberTags.map((member) => [member.id, member]));
 
   const rows = ["GF", "MA", "ME", "ATF", "ATM", "WTF", "WTM", "STF", "STM"];
   const vehicleColumns = vehicles;
@@ -19,27 +36,23 @@ export default async function Page({ searchParams }: PageProps) {
       {alarm?.title && <h2>{alarm.title}</h2>}
       {alarm && <AssignmentStarter alarm={alarm} />}
 
-      <table style={{ borderCollapse: "collapse", width: "100%", maxWidth: 900 }}>
+      <div style={{ overflowX: "auto" }}>
+      <table style={{ borderCollapse: "collapse", width: "100%", tableLayout: "fixed" }}>
         <thead>
           <tr>
-            <th style={{ border: "1px solid #ccc", padding: "0.5rem" }}>Position</th>
+            <th style={{ border: "1px solid #fff", padding: "0.5rem" }}>Position</th>
             {vehicleColumns.map((vehicle, index) => {
-              const isAlarmed = vehicleIds.includes(vehicle.id);
-              const seatAssignments = vehicle.opta ? result?.[vehicle.opta] : undefined;
-              const isAssigned = isAlarmed
-                && seatAssignments
-                && Object.keys(seatAssignments).length > 0
-                && Object.values(seatAssignments).every(Boolean);
+              const isAlarmed = alarmedVehicleIds.includes(vehicle.id);
 
               return (
               <th key={`${vehicle.id}-${index}`} style={{
-                border: "1px solid #ccc",
+                border: "1px solid #fff",
                 padding: "0.5rem",
-                background: isAlarmed ? "transparent" : "#d3d3d3",
+                background: "#faa255",
               }}>
                 {vehicle.opta ?? vehicle.id}
                 {isAlarmed && (
-                  <div>{isAssigned ? "Zugewiesen" : "Nicht zugewiesen"}</div>
+                  <div style={{ fontSize: "75%", color: "#d75200" }}>Alamiert</div>
                 )}
               </th>
               );
@@ -49,14 +62,17 @@ export default async function Page({ searchParams }: PageProps) {
         <tbody>
           {rows.map((row) => (
             <tr key={row}>
-              <td style={{ border: "1px solid #ccc", padding: "0.5rem", fontWeight: 600 }}>
+              <td style={{ border: "1px solid #fff", padding: "0.5rem", fontWeight: 600, 
+                            background: "#faa255"
+              }}>
                 {row}
               </td>
               {vehicleColumns.map((vehicle, index) => {
-                const isAlarmed = vehicleIds.includes(vehicle.id);
+                const isAlarmed = alarmedVehicleIds.includes(vehicle.id);
                 const opta = vehicle.opta;
                 const assignedMember = isAlarmed && opta ? result?.[opta]?.[row] : undefined;
-                const seatExistsForVehicle = isAlarmed && opta
+                const member = assignedMember ? memberTagsById.get(assignedMember) : undefined;
+                const seatExistsForVehicle = opta
                   ? row in (result?.[opta] ?? {})
                   : false;
 
@@ -64,16 +80,12 @@ export default async function Page({ searchParams }: PageProps) {
                   <td
                     key={`${row}-${vehicle.id}-${index}`}
                     style={{
-                      border: "1px solid #ccc",
+                      border: "1px solid #fff",
                       padding: "0.5rem",
-                      background: !isAlarmed
-                        ? "#d3d3d3"
-                        : !seatExistsForVehicle
-                        ? "repeating-linear-gradient(135deg, #f3f3f3 0, #f3f3f3 6px, #d9d9d9 6px, #d9d9d9 12px)"
-                        : "transparent",
+                      background: seatExistsForVehicle ? "#faa2553b" : "#fff",
                     }}
                   >
-                    {assignedMember ?? ""}
+                    {member ? <NameTag member={member} /> : ""}
                   </td>
                 );
               })}
@@ -81,6 +93,7 @@ export default async function Page({ searchParams }: PageProps) {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

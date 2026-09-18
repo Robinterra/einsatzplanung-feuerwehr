@@ -12,22 +12,23 @@ import { verifymemberQualificationsForSeat } from "./rules";
 type SeatAssignments = Record<string, string | null>;
 
 //verteile Einsatzkraefte, return true wenn alle Plätze besetzt sind, bzw wenn alle Fahrzeuge ausgerückt sind
-export async function assignMembersToVehicles(alarm: Alarm, signal?: AbortSignal): Promise<boolean> {
+export async function assignMembersToVehicles(vehicles: string[], signal?: AbortSignal){
   if (signal?.aborted) {
-    return false;
+    return [];
   }
-
-  console.log("Verteile Einsatzkräfte für Alarm:", alarm);
   const availableMembers = await getAvailableMemberWithQualifications();
+  console.log("members:", availableMembers.length);
   const einteilung: SeatAssignments = {};
 
-  const vehiclesWithSeats = await getVehiclesWithSeats(alarm.vehicles ?? []);
-  const currentAssignments = await getPresentMemberAssignments(alarm.vehicles ?? []);
+  const vehiclesWithSeats = await getVehiclesWithSeats(vehicles ?? []);
+  const assignedVehicles: typeof vehiclesWithSeats = [];
 
   assignmentLoop: for (const vehicle of vehiclesWithSeats) 
   {
+    console.log("try vehicle:", vehicle.opta);
+    let vehicleAssigned = true;
     if (signal?.aborted) {
-      return false;
+      return assignedVehicles.map((vehicle) => vehicle.id);
     }
 
     if (!vehicle.opta) 
@@ -37,12 +38,10 @@ export async function assignMembersToVehicles(alarm: Alarm, signal?: AbortSignal
 
     for (const seat of vehicle.seats) 
     {
-      if (currentAssignments[vehicle.opta]?.[seat.seat]) {
-        continue;
-      }
-
+      console.log("try seat");
       if (availableMembers.length === 0) 
         {
+          vehicleAssigned = false;
           break assignmentLoop;
         }
 
@@ -50,12 +49,13 @@ export async function assignMembersToVehicles(alarm: Alarm, signal?: AbortSignal
       let i = 0;
       while (!assigned) 
       {
-
         const member = availableMembers[i];
 
         if (!member) 
         {
-          break assignmentLoop;
+          console.log("No Memeber found for ", seat.seat);
+          vehicleAssigned = false;
+          break;
         }
 
         if (!verifymemberQualificationsForSeat(member, vehicle, seat)) 
@@ -65,23 +65,18 @@ export async function assignMembersToVehicles(alarm: Alarm, signal?: AbortSignal
         }
 
         assigned = true;
-        console.log(`Assigning memberto seat`);
+        console.log(`Assigning member %d to seat`, i);
         availableMembers.splice(i, 1); // Remove the assigned member from the list
         
         einteilung[`${seat.id}`] = `${member.id}`;
       }
     }
+    if (vehicleAssigned){assignedVehicles.push(vehicle)};
   }
   if (signal?.aborted) {
-    return false;
+    return assignedVehicles.map((vehicle) => vehicle.id);
   }
 
-  console.log("Einteilung:", einteilung);
-  await assignMembersToSeats(einteilung);
-
-  const updatedAssignments = await getPresentMemberAssignments(alarm.vehicles ?? []);
-  return vehiclesWithSeats.every((vehicle) =>
-    vehicle.seats.length > 0
-    && vehicle.seats.every((seat) => Boolean(updatedAssignments[vehicle.opta]?.[seat.seat])),
-  );
+  await assignMembersToSeats(einteilung, assignedVehicles.map(v => v.id));
+  return assignedVehicles.map((vehicle) => vehicle.id);
 }

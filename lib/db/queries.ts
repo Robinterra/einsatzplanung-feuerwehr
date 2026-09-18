@@ -66,10 +66,10 @@ export async function getAvailableMemberWithQualifications() {
     return members;
 }
 
-export async function assignMembersToSeats(SeatAssignments: Record<string, string | null>) {
+export async function assignMembersToSeats(SeatAssignments: Record<string, string | null>, Vehicles: string[] | null) {
     const entries = Object.entries(SeatAssignments).filter(([, memberId]) => !!memberId);
 
-    if (entries.length === 0) {
+    if (entries.length === 0 || Vehicles.length === 0) {
         return [];
     }
 
@@ -88,9 +88,19 @@ export async function assignMembersToSeats(SeatAssignments: Record<string, strin
 
             if (!latestPresence) return null;
 
+            const vehicleReady = await prisma.vehicle_seats.findFirst({
+                where: {
+                    id: seatId,
+                    vehicle_id: { in: Vehicles},
+                }
+            });
+
+            if(!vehicleReady) return null;
+            
             return prisma.member_presence_logs.update({
                 where: {
                     id: latestPresence.id,
+                    
                 },
                 data: {
                     seat_id: seatId ?? null,
@@ -200,15 +210,17 @@ export async function getPresentMemberAssignments(vehicleID: string[]) {
         },
         select: {
             seat_id: true,
-            first_name: true,
-            last_name: true,
+            id: true,
+        },
+        orderBy: {
+            presence_timestamp: "desc"
         },
     });
 
     const memberBySeat = new Map<string, string>();
     for (const member of presentMembers) {
         if (member.seat_id && !memberBySeat.has(member.seat_id)) {
-            memberBySeat.set(member.seat_id, `${member.last_name}, ${member.first_name}`);
+            memberBySeat.set(member.seat_id, `${member.id}`);
         }
     }
 
@@ -267,6 +279,100 @@ export async function getOpta(vehicleIds: string[]) {
     });
 
     return vehicles
+}
+
+export async function getMemberInformation(memberId:string) {
+    const member = await prisma.members.findUnique({
+        select: {
+            first_name: true,
+            last_name: true,
+            member_trainings_view: {
+                    select: {
+                        training_id: true,
+                        training: {
+                            select: {
+                                key: true
+                        }
+                    },
+                },
+                where: {
+                    status: "passed",
+                    OR: [
+                        {
+                            expiration: null,
+                        },
+                        {
+                            expiration: {
+                                gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                            },
+                        },
+                    ],
+                    training: {
+                        key: {
+                            in: ["AGT", "GF2", "TF", "ZF2", "MA"]
+                        },
+                    },
+                },
+            }, 
+        },
+        where: {
+            id: memberId,
+            
+        },
+    })
+    if (!member) {
+        return null;
+    }
+
+    return {
+        name: `${member.last_name}, ${member.first_name}`,
+        trainings: member.member_trainings_view
+            .map((memberTraining) => memberTraining.training?.key)
+            .filter((key): key is string => Boolean(key))
+            .join(", "),
+    };
+}
+
+export async function getAssignedVehicles() {
+    const presentMemberSeats = await prisma.member_presence_view.findMany({
+        where: {
+            present: 1,
+            seat_id: { not: null },
+        },
+        select: {
+            seat_id: true,
+        },
+        orderBy: {
+            presence_timestamp: "desc"
+        },
+    });
+
+    const vehicles = await prisma.vehicles.findMany({
+            where: 
+            {
+                license_plate: 
+                {
+                    not: null,
+                },
+                vehicle_seats:
+                {
+                    none: 
+                    {
+                        id:
+                        {
+                            notIn: presentMemberSeats.map(s => s.seat_id),
+                        },
+                    },
+                },
+            },
+            select: 
+            {
+                id: true,
+            },
+    });
+    
+    return vehicles
+    //alle vehicle, für die alle sitze mit anwesenden membern beetzt sind
 }
 
 

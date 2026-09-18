@@ -1,21 +1,30 @@
+import { getAssignedVehicles } from "../db/queries";
 import { Alarm } from "../divera/alarm";
 import { assignMembersToVehicles } from "./validAssignment";
 
 
 export async function startAssignment(alarm: Alarm,signal?: AbortSignal): Promise<void> 
 {
-
+    let vehiclesToBeAssigned = alarm.vehicles
+    console.log("Einteilungszyklus gestartet");
+    let i = 1;
     while (!signal?.aborted) 
     {
-
-        const allVehiclesAssigned = await assignMembersToVehicles(alarm, signal);
+        
+        const assignedVehicles = await getAssignedVehicles();
+        const assignedVehicleIds = new Set(assignedVehicles.map(v => v.id));
+        console.log("assaigned:", assignedVehicleIds)
+        vehiclesToBeAssigned = vehiclesToBeAssigned.filter((vehicleId) => !assignedVehicleIds.has(vehicleId),);//schon eingeteilte Fahrzeuge werden direkt aus den einzuteilenden Fahrzeugen genommen
+        console.log("Zyklus %d. Noch nicht assiged:", i, vehiclesToBeAssigned);
+        i++;
+        await assignMembersToVehicles(vehiclesToBeAssigned, signal);
 
         if (signal?.aborted) 
         {
             return;
         }
 
-        if (allVehiclesAssigned) 
+        if (vehiclesToBeAssigned.length === 0) 
         {
             return;
         }
