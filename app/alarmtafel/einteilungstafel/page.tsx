@@ -1,9 +1,33 @@
 import AssignmentStarter from "./AssignmentStarter";
 import { getMemberInformation, getPresentMemberAssignments, getVehicles} from "@/lib/db/queries";
 import { MemberTag, NameTag } from "./nameTag";
+import { testQualificationsForVehicle } from "@/lib/testAssignment/testValidation";
 type PageProps = {
   searchParams: Promise<{ alarm?: string }>;
 };
+
+function validateSeatMapping(
+  assignments: Record<string, Record<string, string | null>> | undefined,
+  validation: Record<string, Record<string, boolean>> | undefined,
+) {
+  if (!assignments || !validation) {
+    return true;
+  }
+
+  for (const [vehicle, seats] of Object.entries(assignments)) {
+    for (const [seat, memberId] of Object.entries(seats)) {
+      const seatValidation = validation[vehicle]?.[seat];
+      const isSeatPresent = memberId !== null;
+
+      if (isSeatPresent && seatValidation === undefined) {
+        console.warn(`Seat mapping mismatch: ${vehicle} / ${seat} has a member but no validation entry.`);
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
 
 export default async function Page({ searchParams }: PageProps) {
   const { alarm: alarmParam } = await searchParams;
@@ -11,6 +35,11 @@ export default async function Page({ searchParams }: PageProps) {
   const alarmedVehicleIds: string[] = alarm?.vehicles ?? [];
   const vehicles = await getVehicles();
   const result = await getPresentMemberAssignments(vehicles.map((vehicle) => vehicle.id));
+  const validation = await testQualificationsForVehicle(vehicles.map((vehicle) => vehicle.id)); //Teste Qualifikation für jeden eingeteilten Member
+  const seatMappingIsValid = validateSeatMapping(result, validation);
+  if (!seatMappingIsValid) {
+    console.warn("Seat mapping validation failed: vehicle-to-seat assignment mismatch detected.");
+  }
   const memberIds = Array.from(
     new Set(
       Object.values(result)
@@ -68,13 +97,13 @@ export default async function Page({ searchParams }: PageProps) {
                 {row}
               </td>
               {vehicleColumns.map((vehicle, index) => {
-                const isAlarmed = alarmedVehicleIds.includes(vehicle.id);
                 const opta = vehicle.opta;
-                const assignedMember = isAlarmed && opta ? result?.[opta]?.[row] : undefined;
+                const assignedMember = opta ? result?.[opta]?.[row] : undefined;
                 const member = assignedMember ? memberTagsById.get(assignedMember) : undefined;
                 const seatExistsForVehicle = opta
                   ? row in (result?.[opta] ?? {})
                   : false;
+                const isSeatValid = opta ? validation?.[opta]?.[row] ?? true : true;
 
                 return (
                   <td
@@ -82,7 +111,9 @@ export default async function Page({ searchParams }: PageProps) {
                     style={{
                       border: "1px solid #fff",
                       padding: "0.5rem",
-                      background: seatExistsForVehicle ? "#faa2553b" : "#fff",
+                      background: seatExistsForVehicle
+                        ? (isSeatValid ? "#faa2553b" : "#e91d323b")
+                        : "#fff",
                     }}
                   >
                     {member ? <NameTag member={member} /> : ""}

@@ -309,7 +309,7 @@ export async function getMemberInformation(memberId:string) {
                     ],
                     training: {
                         key: {
-                            in: ["AGT", "GF2", "TF", "ZF2", "MA"]
+                            in: ["AGT", "GF1", "GF2", "TF", "ZF1", "ZF2", "MA"]
                         },
                     },
                 },
@@ -375,5 +375,32 @@ export async function getAssignedVehicles() {
     //alle vehicle, für die alle sitze mit anwesenden membern beetzt sind
 }
 
+export async function getTrainigs(memberId: string){
+    const trainings = await prisma.member_trainings_view.findMany({
+        where: { 
+            member_id: memberId,
+            status: "passed",
+            OR: [
+                {
+                    expiration: null,
+                },
+                {
+                    expiration: {
+                        gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                    },
+                },
+            ],
+        },
+        select: {
+            training: {
+                select: {
+                    key: true,
+                },
+        }}
+    })
+  return trainings.map((memberTraining) => memberTraining.training?.key)
+            .filter((key): key is string => Boolean(key))
+            .join(", ");
+}
 
 /* Alle Menschen die Anwesend sind, davon die Personalnummer, Qualifikation (AGT, Fahrzeuge, TH, Führungslehrgang) */

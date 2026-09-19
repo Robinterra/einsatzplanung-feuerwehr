@@ -1,10 +1,8 @@
 "use server"
 import {
   getVehiclesWithSeats,
-  confirmVehicleInstruction,
   getAvailableMemberWithQualifications,
   assignMembersToSeats,
-  getPresentMemberAssignments,
 } from "../db/queries";
 import { Alarm } from "../divera/alarm";
 import { verifymemberQualificationsForSeat } from "./rules";
@@ -16,7 +14,7 @@ export async function assignMembersToVehicles(vehicles: string[], signal?: Abort
   if (signal?.aborted) {
     return [];
   }
-  const availableMembers = await getAvailableMemberWithQualifications();
+  const availableMembers = shuffle(await getAvailableMemberWithQualifications());
   console.log("members:", availableMembers.length);
   const einteilung: SeatAssignments = {};
 
@@ -38,7 +36,6 @@ export async function assignMembersToVehicles(vehicles: string[], signal?: Abort
 
     for (const seat of vehicle.seats) 
     {
-      console.log("try seat");
       if (availableMembers.length === 0) 
         {
           vehicleAssigned = false;
@@ -65,7 +62,7 @@ export async function assignMembersToVehicles(vehicles: string[], signal?: Abort
         }
 
         assigned = true;
-        console.log(`Assigning member %d to seat`, i);
+        console.log(`Assigning member %d to seat`, i, seat.seat);
         availableMembers.splice(i, 1); // Remove the assigned member from the list
         
         einteilung[`${seat.id}`] = `${member.id}`;
@@ -80,3 +77,14 @@ export async function assignMembersToVehicles(vehicles: string[], signal?: Abort
   await assignMembersToSeats(einteilung, assignedVehicles.map(v => v.id));
   return assignedVehicles.map((vehicle) => vehicle.id);
 }
+
+
+function shuffle<T>(array: T[]): T[] {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+
+    return array;
+}
+

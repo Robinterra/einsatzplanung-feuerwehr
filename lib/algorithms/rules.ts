@@ -4,15 +4,15 @@ export function verifymemberQualificationsForSeat(member: any, vehicle: any, sea
     {
         return false;
     }
-    if (seat.leadership === "GF" && !member.members.member_trainings_view.some(training => training.training.key === "GF1") && !member.members.member_trainings_view.some(training => training.training.key === "GF2"))
+    if (seat.leadership === "GF" && !(member.members.member_trainings_view.some(training => training.training.key === "GF1") && member.members.member_trainings_view.some(training => training.training.key === "GF2")))
     {
         return false;
     }
-    if (seat.leadership === "ZF" && !member.members.member_trainings_view.some(training => training.training.key === "ZF1") && !member.members.member_trainings_view.some(training => training.training.key === "ZF2"))
+    if (seat.leadership === "ZF" && !(member.members.member_trainings_view.some(training => training.training.key === "ZF1") && member.members.member_trainings_view.some(training => training.training.key === "ZF2")))
     {
         return false;
     }
-    if (seat.agt && !checkAGTQualification(member))
+    if (seat.agt === 1 && !checkAGTQualification(member))
     {
         return false;
     }
@@ -30,3 +30,5 @@ async function checkAGTQualification(member: any): Promise<boolean> {
     return requiredRequirements.every(requirement => member.members.member_trainings_view.some(training => training.training.key === requirement))
         && exerciseOrOperation.some(requirement => member.members.member_trainings_view.some(training => training.training.key === requirement));
 }
+
+//allgemeine EInsatztauglichgeit fehlt
