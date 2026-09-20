@@ -1,6 +1,10 @@
 "use server"
 import { prisma } from "@/lib/db/prisma";
 
+export type MemberWithQualifications = Awaited<ReturnType<typeof getAvailableMemberWithQualifications>>[number];
+export type vehicleWithSeats = Awaited<ReturnType<typeof getVehiclesWithSeats>>[number];
+export type seat = vehicleWithSeats['seats'][number];
+
 export async function getAvailableMemberWithQualifications() {
     const members = await prisma.member_presence_view.findMany({
         where: {
@@ -17,11 +21,14 @@ export async function getAvailableMemberWithQualifications() {
                         training_id: true,
                         training: {
                             select: {
-                                key: true
-                        }
-                    },
+                                ref: true
+                            },
+                        },
                 },
                 where: {
+                    training:{ref: {
+                        not: null,
+                    }},
                     status: "passed",
                     OR: [
                         {
@@ -168,12 +175,7 @@ export async function getVehiclesWithSeats(vehicleID: string[]) {
         .map((vehicle) => ({
             id: vehicle.id,
             opta: vehicle.opta!,
-            seats: vehicle.vehicle_seats.map((seat) => ({
-                id: seat.id,
-                seat: seat.seat,
-                agt: seat.agt,
-                leadership: seat.leadership,
-            })),
+            seats: vehicle.vehicle_seats
         }));
 }
 
@@ -288,14 +290,14 @@ export async function getMemberInformation(memberId:string) {
             last_name: true,
             member_trainings_view: {
                     select: {
-                        training_id: true,
                         training: {
                             select: {
-                                key: true
+                                ref: true
                         }
                     },
                 },
                 where: {
+                    training:{ref: { not: null}},
                     status: "passed",
                     OR: [
                         {
@@ -307,11 +309,6 @@ export async function getMemberInformation(memberId:string) {
                             },
                         },
                     ],
-                    training: {
-                        key: {
-                            in: ["AGT", "GF1", "GF2", "TF", "ZF1", "ZF2", "MA"]
-                        },
-                    },
                 },
             }, 
         },
@@ -327,8 +324,7 @@ export async function getMemberInformation(memberId:string) {
     return {
         name: `${member.last_name}, ${member.first_name}`,
         trainings: member.member_trainings_view
-            .map((memberTraining) => memberTraining.training?.key)
-            .filter((key): key is string => Boolean(key))
+            .map((memberTraining) => memberTraining.training.ref)
             .join(", "),
     };
 }
@@ -378,6 +374,7 @@ export async function getAssignedVehicles() {
 export async function getTrainigs(memberId: string){
     const trainings = await prisma.member_trainings_view.findMany({
         where: { 
+            training:{ref: {not : null}},
             member_id: memberId,
             status: "passed",
             OR: [
@@ -394,13 +391,11 @@ export async function getTrainigs(memberId: string){
         select: {
             training: {
                 select: {
-                    key: true,
+                    ref: true,
                 },
         }}
     })
-  return trainings.map((memberTraining) => memberTraining.training?.key)
-            .filter((key): key is string => Boolean(key))
-            .join(", ");
+  return trainings.map((memberTraining) => memberTraining.training.ref)
 }
 
 /* Alle Menschen die Anwesend sind, davon die Personalnummer, Qualifikation (AGT, Fahrzeuge, TH, Führungslehrgang) */

@@ -4,7 +4,6 @@ import {
   getAvailableMemberWithQualifications,
   assignMembersToSeats,
 } from "../db/queries";
-import { Alarm } from "../divera/alarm";
 import { verifymemberQualificationsForSeat } from "./rules";
 
 type SeatAssignments = Record<string, string | null>;
@@ -55,7 +54,7 @@ export async function assignMembersToVehicles(vehicles: string[], signal?: Abort
           break;
         }
 
-        if (!verifymemberQualificationsForSeat(member, vehicle, seat)) 
+        if (!verifymemberQualificationsForSeat(member, vehicle.opta, seat)) 
         {
           i++;
           continue;

@@ -1,20 +1,15 @@
+import { trainings_ref } from "@prisma/client";
 import { getPresentMemberAssignments, getTrainigs } from "../db/queries";
 
-export function hasTrainingKeys(trainings: string | string[] | null | undefined): string[] {
-    const rawTrainings = Array.isArray(trainings) ? trainings : (trainings ?? "").split(",");
-    return rawTrainings
-        .map((training) => training.trim())
-        .filter((training) => training.length > 0);
-}
 
-export function hasAGTQualification(trainings: string | string[] | null | undefined): boolean {
-    const availableTrainings = new Set(hasTrainingKeys(trainings));
-    const requiredRequirements = ["AGT", "AGT-UW", "AGT-Strecke", "G26.3"];
-    const exerciseOrOperation = ["AGT-Übung", "AGT-Einsatz"];
+
+export function hasAGTQualification(trainings: trainings_ref[] ): boolean {
+    const requiredRequirements:trainings_ref[] = ["AGT", "AGT_Unterweisung", "AGT_Strecke", "G26_3"];
+    const exerciseOrOperation:trainings_ref[] = ["AGT_Uebung", "AGT_Einsatz"];
 
     return (
-        requiredRequirements.every((requirement) => availableTrainings.has(requirement)) &&
-        exerciseOrOperation.some((requirement) => availableTrainings.has(requirement))
+        requiredRequirements.every((requirement) => trainings.includes(requirement)) &&
+        exerciseOrOperation.some((requirement) => trainings.includes(requirement))
     );
 }
 
@@ -117,27 +112,27 @@ async function isValid(vehicle: string, seat: string, memberId: string): Promise
 }
 
 async function isZF(memberId: string): Promise<boolean> { //Gruppenführer?
-    const trainings = hasTrainingKeys(await getTrainigs(memberId));
-    return trainings.includes("ZF1") && trainings.includes("ZF2");
+    const trainings = await getTrainigs(memberId);
+    return trainings.includes("ZF");
 }
 
 async function isGF(memberId: string): Promise<boolean> { //Gruppenführer?
-    const trainings = hasTrainingKeys(await getTrainigs(memberId));
-    return trainings.includes("GF1") && trainings.includes("GF2");
+    const trainings = await getTrainigs(memberId);
+    return trainings.includes("GF");
 }
 
 async function isMA(memberId: string, vehicle: string): Promise<boolean> { //Maschinist?
-    const trainings = hasTrainingKeys(await getTrainigs(memberId));
+    const trainings =await getTrainigs(memberId);
     return trainings.includes("MA");
 }
 
 async function isTF(memberId: string): Promise<boolean> { //Truppfüherer?
-    const trainings = hasTrainingKeys(await getTrainigs(memberId));
+    const trainings =await getTrainigs(memberId);
     return trainings.includes("TF");
 }
 
 async function isAGT(memberId: string): Promise<boolean> { //Atemschutzgeräteträger?
-    const trainings = hasTrainingKeys(await getTrainigs(memberId));
+    const trainings = await getTrainigs(memberId);
     //return hasAGTQualification(trainings);
     return trainings.includes("AGT");
 }
