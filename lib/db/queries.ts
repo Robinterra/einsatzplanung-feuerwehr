@@ -1,10 +1,15 @@
 "use server"
 import { prisma } from "@/lib/db/prisma";
 
+export type MemberWithQualifications = Awaited<ReturnType<typeof getAvailableMemberWithQualifications>>[number];
+export type vehicleWithSeats = Awaited<ReturnType<typeof getVehiclesWithSeats>>[number];
+export type seat = vehicleWithSeats['seats'][number];
+
 export async function getAvailableMemberWithQualifications() {
     const members = await prisma.member_presence_view.findMany({
         where: {
             present: 1,
+            seat_id: null,
         },
         select: {
             id: true,
@@ -16,11 +21,14 @@ export async function getAvailableMemberWithQualifications() {
                         training_id: true,
                         training: {
                             select: {
-                                key: true
-                        }
-                    },
+                                ref: true
+                            },
+                        },
                 },
                 where: {
+                    training:{ref: {
+                        not: null,
+                    }},
                     status: "passed",
                     OR: [
                         {
@@ -65,10 +73,10 @@ export async function getAvailableMemberWithQualifications() {
     return members;
 }
 
-export async function assignMembersToSeats(SeatAssignments: Record<string, string | null>) {
+export async function assignMembersToSeats(SeatAssignments: Record<string, string | null>, Vehicles: string[] | null) {
     const entries = Object.entries(SeatAssignments).filter(([, memberId]) => !!memberId);
 
-    if (entries.length === 0) {
+    if (entries.length === 0 || Vehicles.length === 0) {
         return [];
     }
 
@@ -87,9 +95,19 @@ export async function assignMembersToSeats(SeatAssignments: Record<string, strin
 
             if (!latestPresence) return null;
 
+            const vehicleReady = await prisma.vehicle_seats.findFirst({
+                where: {
+                    id: seatId,
+                    vehicle_id: { in: Vehicles},
+                }
+            });
+
+            if(!vehicleReady) return null;
+            
             return prisma.member_presence_logs.update({
                 where: {
                     id: latestPresence.id,
+                    
                 },
                 data: {
                     seat_id: seatId ?? null,
@@ -157,12 +175,7 @@ export async function getVehiclesWithSeats(vehicleID: string[]) {
         .map((vehicle) => ({
             id: vehicle.id,
             opta: vehicle.opta!,
-            seats: vehicle.vehicle_seats.map((seat) => ({
-                id: seat.id,
-                seat: seat.seat,
-                agt: seat.agt,
-                leadership: seat.leadership,
-            })),
+            seats: vehicle.vehicle_seats
         }));
 }
 
@@ -199,15 +212,17 @@ export async function getPresentMemberAssignments(vehicleID: string[]) {
         },
         select: {
             seat_id: true,
-            first_name: true,
-            last_name: true,
+            id: true,
+        },
+        orderBy: {
+            presence_timestamp: "desc"
         },
     });
 
     const memberBySeat = new Map<string, string>();
     for (const member of presentMembers) {
         if (member.seat_id && !memberBySeat.has(member.seat_id)) {
-            memberBySeat.set(member.seat_id, `${member.last_name}, ${member.first_name}`);
+            memberBySeat.set(member.seat_id, `${member.id}`);
         }
     }
 
@@ -230,6 +245,7 @@ export async function getPresentMemberAssignments(vehicleID: string[]) {
 export async function getVehicles() {
     const vehicles = await prisma.vehicles.findMany({
         select: {
+            id: true,
             opta: true,
         },
         where: { license_plate: { not: null } }
@@ -267,62 +283,119 @@ export async function getOpta(vehicleIds: string[]) {
     return vehicles
 }
 
-export async function getAvailableMembers() {
-    const members = await prisma.members.findMany({
+export async function getMemberInformation(memberId:string) {
+    const member = await prisma.members.findUnique({
         select: {
-            id: true,
             first_name: true,
             last_name: true,
-        
+            member_trainings_view: {
+                    select: {
+                        training: {
+                            select: {
+                                ref: true
+                        }
+                    },
+                },
+                where: {
+                    training:{ref: { not: null}},
+                    status: "passed",
+                    OR: [
+                        {
+                            expiration: null,
+                        },
+                        {
+                            expiration: {
+                                gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                            },
+                        },
+                    ],
+                },
+            }, 
         },
-        where: { status: "active" }
-    });
-    return members;
+        where: {
+            id: memberId,
+            
+        },
+    })
+    if (!member) {
+        return null;
+    }
+
+    return {
+        name: `${member.last_name}, ${member.first_name}`,
+        trainings: member.member_trainings_view
+            .map((memberTraining) => memberTraining.training.ref)
+            .join(", "),
+    };
 }
 
-export async function getMemberQualifications(memberId: string) {
-    const qualifications = await prisma.member_training_logs.findMany({
-        select: {
-            training_id: true,
-            expiration: true
+export async function getAssignedVehicles() {
+    const presentMemberSeats = await prisma.member_presence_view.findMany({
+        where: {
+            present: 1,
+            seat_id: { not: null },
         },
+        select: {
+            seat_id: true,
+        },
+        orderBy: {
+            presence_timestamp: "desc"
+        },
+    });
+
+    const vehicles = await prisma.vehicles.findMany({
+            where: 
+            {
+                license_plate: 
+                {
+                    not: null,
+                },
+                vehicle_seats:
+                {
+                    none: 
+                    {
+                        id:
+                        {
+                            notIn: presentMemberSeats.map(s => s.seat_id),
+                        },
+                    },
+                },
+            },
+            select: 
+            {
+                id: true,
+            },
+    });
+    
+    return vehicles
+    //alle vehicle, für die alle sitze mit anwesenden membern beetzt sind
+}
+
+export async function getTrainigs(memberId: string){
+    const trainings = await prisma.member_trainings_view.findMany({
         where: { 
-            member_id: memberId, 
-            status: "passed"
-        }
-    });
-    const qualificationDetails = await prisma.trainings.findMany({
-        select: {
-            id: true,
-            key: true
+            training:{ref: {not : null}},
+            member_id: memberId,
+            status: "passed",
+            OR: [
+                {
+                    expiration: null,
+                },
+                {
+                    expiration: {
+                        gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                    },
+                },
+            ],
         },
-        where: {
-            id: { in: qualifications.map(q => q.training_id) },
-            key : { in: ["AGT", "MA", "ZF1", "ZF2", "TF", "GF1", "GF2", "TH"] }
-        }
-    });
-
-    return qualificationDetails;
+        select: {
+            training: {
+                select: {
+                    ref: true,
+                },
+        }}
+    })
+  return trainings.map((memberTraining) => memberTraining.training.ref)
 }
-
-export async function getVehicleInstructions(memberId: string) {
-    const instructions = await prisma.vehicle_instruction_logs.findMany({
-        select: {
-            vehicle_id: true
-        },
-        where: { member_id: memberId }
-    });
-    const instructionDetails = await prisma.vehicles.findMany({
-        select: {
-            id: true,
-            name: true
-        },
-        where: {
-            id: { in: instructions.map(i => i.vehicle_id) }
-        }
-    });
-    return instructionDetails;
-}
-
 
 /* Alle Menschen die Anwesend sind, davon die Personalnummer, Qualifikation (AGT, Fahrzeuge, TH, Führungslehrgang) */

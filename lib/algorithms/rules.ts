@@ -1,25 +1,40 @@
-export async function verifymemberQualificationsForSeat(member: any, vehicle: any, seat: any): Promise<boolean>
+import { trainings_ref } from "@prisma/client";
+import { MemberWithQualifications, seat } from "../db/queries";
+
+export function verifymemberQualificationsForSeat(member: MemberWithQualifications, vehicleOpta : string, seat: seat): boolean
 {
-    if (seat.leadership === "TF" && !member.members.member_trainings_view.some(training => training.training.key === "TF"))
+    if (seat.leadership === "TF" && !member.members.member_trainings_view.some(training => training.training.ref === "TF"))
     {
         return false;
     }
-    if (seat.leadership === "GF" && !member.members.member_trainings_view.some(training => training.training.key === "GF1") && !member.members.member_trainings_view.some(training => training.training.key === "GF2"))
+    if (seat.leadership === "GF" && !(member.members.member_trainings_view.some(training => training.training.ref === "GF")))
     {
         return false;
     }
-    if (seat.leadership === "ZF" && !member.members.member_trainings_view.some(training => training.training.key === "ZF1") && !member.members.member_trainings_view.some(training => training.training.key === "ZF2"))
+    if (seat.leadership === "ZF" && !(member.members.member_trainings_view.some(training => training.training.ref === "ZF")))
     {
         return false;
     }
-    if (seat.agt && !member.members.member_trainings_view.some(training => training.training.key === "AGT"))
-    {//To-Do: gesamte tauglichkeit testen
+    if (seat.agt && !hasAGTQualification(member.members.member_trainings_view.map(t => t.training.ref)))
+    {
         return false;
     }
-    if (seat.seat === "MA" && !member.members.vehicle_instructions_view.some(instruction => instruction.vehicles.opta === vehicle.opta))
+    if (seat.seat === "MA" && !(member.members.vehicle_instructions_view.some(instruction => instruction.vehicles.opta === vehicleOpta) && member.members.member_trainings_view.some(training => training.training.ref === "MA")))
     {
         return false;
     }
 
     return true;
 }
+
+export function hasAGTQualification(trainings: trainings_ref[] ): boolean {
+    const requiredRequirements:trainings_ref[] = ["AGT", "AGT_Unterweisung", "AGT_Strecke", "G26_3"];
+    const exerciseOrOperation:trainings_ref[] = ["AGT_Uebung", "AGT_Einsatz"];
+
+    return (
+        requiredRequirements.every((requirement) => trainings.includes(requirement)) &&
+        exerciseOrOperation.some((requirement) => trainings.includes(requirement))
+    );
+}
+
+//allgemeine EInsatztauglichgeit fehlt

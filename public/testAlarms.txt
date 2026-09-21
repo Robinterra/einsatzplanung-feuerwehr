@@ -31,6 +31,19 @@
     "date": 1789142123
   },
   {
+    "alarmcode_id": 21,
+    "title": "B Dienstabend",
+    "vehicles": [
+       "BS 09-46-56",
+      "BS 80-44-01",
+      "BS 09-19-56",
+      "BS 09-64-56",
+      "BS 09-65-56",
+      "BS 09-67-56"
+    ],
+    "date": 1789142900
+  },
+  {
     "alarmcode_id": 19,
     "title": "H 0 Türöffnung",
     "vehicles": [
