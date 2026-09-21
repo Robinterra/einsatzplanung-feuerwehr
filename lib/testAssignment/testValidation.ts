@@ -133,10 +133,10 @@ async function isTF(memberId: string): Promise<boolean> { //Truppfüherer?
 
 async function isAGT(memberId: string): Promise<boolean> { //Atemschutzgeräteträger?
     const trainings = await getTrainigs(memberId);
-    //return hasAGTQualification(trainings);
-    return trainings.includes("AGT");
+    return hasAGTQualification(trainings);
 }
 
 async function isTM(memberId: string): Promise<boolean> { //Truppmann bzw Einsatzqualifikation? später, wenn das überhaupt geprüft wird
-    return true;
+    const trainings = await getTrainigs(memberId);
+    return trainings.includes("TM") || trainings.includes("TF");
 }
