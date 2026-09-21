@@ -80,9 +80,14 @@ export async function assignMembersToSeats(SeatAssignments: Record<string, strin
         return [];
     }
 
-    const updates = await Promise.all(
+    var success = true;
+    await Promise.all(
         entries.map(async ([seatId, memberId]) => {
-            if (!memberId) return null;
+            if (!memberId)
+            {
+                success = false;
+                return null;
+            }
 
             const latestPresence = await prisma.member_presence_logs.findFirst({
                 where: {
@@ -93,7 +98,11 @@ export async function assignMembersToSeats(SeatAssignments: Record<string, strin
                 },
             });
 
-            if (!latestPresence) return null;
+            if (!latestPresence)
+            {
+                success = false;
+                return null;
+            }
 
             const vehicleReady = await prisma.vehicle_seats.findFirst({
                 where: {
@@ -102,21 +111,23 @@ export async function assignMembersToSeats(SeatAssignments: Record<string, strin
                 }
             });
 
-            if(!vehicleReady) return null;
+            if(!vehicleReady)
+            {
+                success = false;
+                return null;
+            }
             
-            return prisma.member_presence_logs.update({
-                where: {
-                    id: latestPresence.id,
-                    
-                },
+            await prisma.member_presence_logs.create({
                 data: {
+                    member_id: memberId,
+                    present: true,
                     seat_id: seatId ?? null,
                 },
             });
         })
     );
 
-    return updates.filter((result): result is NonNullable<typeof result> => result !== null);
+    return success;
 }
 
 export async function confirmVehicleInstruction(MemberId: string, vehicleOpta: string) {

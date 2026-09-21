@@ -36,6 +36,8 @@ export default async function Page({ searchParams }: PageProps) {
   const alarms = await showAlarms();
 
   const alarm = alarms?.find((a) => a.alarmcode_id === tempAlarm?.alarmcode_id) ?? null;
+  const alarmJson = alarm ? JSON.stringify(alarm) : null;
+  const alarmClean = JSON.parse(alarmJson ?? "{}") as typeof alarm;
 
   const alarmedVehicleIds: string[] = alarm?.vehicles ?? [];
   const vehicles = await getVehicles();
@@ -68,7 +70,7 @@ export default async function Page({ searchParams }: PageProps) {
     <div>
       <h1>Einteilungstafel</h1>
       {alarm?.title && <h2>{alarm.title}</h2>}
-      {tempAlarm && <AssignmentStarter alarm={tempAlarm} />}
+      {alarmClean && <AssignmentStarter alarm={alarmClean} />}
 
       <div style={{ overflowX: "auto" }}>
       <table style={{ borderCollapse: "collapse", width: "100%", tableLayout: "fixed" }}>
