@@ -1,9 +1,10 @@
 import { trainings_ref } from "@prisma/client";
 import { Alarm } from "../divera/alarm";
-import {getAssignedMemberIds, getMembersWithRequiredQualifications, getPresentMemberIds, setPresence} from "../controlling/queries";
+import {getAssignedMemberIds, getMembersWithRequiredQualifications, getPresentMemberIds, setPresence} from "./queries";
 import {getPresentMemberAssignments} from "../db/queries"
 
 export async function deleteAssignment() {
+    console.log("deleteAssignment called");
     setPresence(null, true);
 }
 

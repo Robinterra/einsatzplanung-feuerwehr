@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { startAssignment } from "@/lib/algorithms/startAssignment";
+import { deleteAssignment } from "@/lib/controlling/controlFunctions";
 import {
 	registerAssignment,
 	stopAssignment,
@@ -57,4 +58,8 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
 	const { alarmcode_id: alarmId } = await request.json();
 	return NextResponse.json({ stopped: stopAssignment(Number(alarmId)) });
+}
+
+export async function PATCH(request: Request) {
+	return NextResponse.json({ deleted: await deleteAssignment() });
 }

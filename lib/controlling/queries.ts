@@ -10,7 +10,7 @@ import { trainings_ref } from "@prisma/client";
 // #alle Member gehen
 export async function setPresence(memberIds: string[] | null, presence: boolean) 
 {
-    if (memberIds!){
+    if (!memberIds){
         memberIds = (await getPresentMemberIds()).map(a => a.id);
     }
     await prisma.member_presence_logs.createMany({
