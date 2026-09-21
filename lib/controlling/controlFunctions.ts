@@ -5,7 +5,7 @@ import {getPresentMemberAssignments} from "../db/queries"
 
 export async function deleteAssignment() {
     console.log("deleteAssignment called");
-    setPresence(null, true);
+    await setPresence(null, true);
 }
 
 export async function deleteAssignmentForVehicles(vehicleIds: string[])
