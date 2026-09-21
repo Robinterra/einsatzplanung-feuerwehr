@@ -61,5 +61,9 @@ export async function DELETE(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-	return NextResponse.json({ deleted: await deleteAssignment() });
+	const { alarmcode_id: alarmId } = await request.json();
+	const stopped = stopAssignment(Number(alarmId));
+	await deleteAssignment();
+
+	return NextResponse.json({ stopped, deleted: true });
 }

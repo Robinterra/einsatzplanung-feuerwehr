@@ -1,5 +1,6 @@
 import AssignmentStarter from "./AssignmentStarter";
 import DeleteAssignment from "./DeleteAssignment";
+import RestartAssignment from "./RestartAssignment";
 import { getMemberInformation, getPresentMemberAssignments, getVehicles} from "@/lib/db/queries";
 import { MemberTag, NameTag } from "./nameTag";
 import { testQualificationsForVehicle } from "@/lib/testAssignment/testValidation";
@@ -65,7 +66,8 @@ export default async function Page({ searchParams }: PageProps) {
       <h1>Einteilungstafel</h1>
       {alarm?.title && <h2>{alarm.title}</h2>}
       {alarm && <AssignmentStarter alarm={alarm} />}
-      {<DeleteAssignment />}
+      {alarm && <DeleteAssignment alarm={alarm} />}
+      {alarm && <RestartAssignment alarm={alarm} />}
 
       <div style={{ overflowX: "auto" }}>
       <table style={{ borderCollapse: "collapse", width: "100%", tableLayout: "fixed" }}>
