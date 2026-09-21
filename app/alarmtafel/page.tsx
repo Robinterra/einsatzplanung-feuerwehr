@@ -37,14 +37,11 @@ export default function MyApp() {
 
   function handleStartAssignment(alarm: Alarm) {
     const selectedAlarm = {
-      alarmcode_id: alarm.alarmcode_id,
-      title: alarm.title,
-      kindOfAlarm: alarm.kindOfAlarm,
-      vehicles: alarm.vehicles,
-      timePassed: alarm.timePassed,
-    } satisfies Alarm;
+      alarmcode_id: alarm.alarmcode_id
+    };
 
     router.push(
+
       `/alarmtafel/einteilungstafel?alarm=${encodeURIComponent(JSON.stringify(selectedAlarm))}`,
     );
   }

@@ -1,7 +1,8 @@
 import AssignmentStarter from "./AssignmentStarter";
-import { getMemberInformation, getPresentMemberAssignments, getVehicles} from "@/lib/db/queries";
+import { getMemberInformation, getPresentMemberAssignments, getVehicles, getAlarmById} from "@/lib/db/queries";
 import { MemberTag, NameTag } from "./nameTag";
 import { testQualificationsForVehicle } from "@/lib/testAssignment/testValidation";
+import { showAlarms } from "@/lib/divera/alarm";
 type PageProps = {
   searchParams: Promise<{ alarm?: string }>;
 };
@@ -31,7 +32,11 @@ function validateSeatMapping(
 
 export default async function Page({ searchParams }: PageProps) {
   const { alarm: alarmParam } = await searchParams;
-  const alarm = alarmParam ? JSON.parse(alarmParam) : null;
+  const tempAlarm = alarmParam ? JSON.parse(alarmParam) : null;
+  const alarms = await showAlarms();
+
+  const alarm = alarms?.find((a) => a.alarmcode_id === tempAlarm?.alarmcode_id) ?? null;
+
   const alarmedVehicleIds: string[] = alarm?.vehicles ?? [];
   const vehicles = await getVehicles();
   const result = await getPresentMemberAssignments(vehicles.map((vehicle) => vehicle.id));
@@ -63,7 +68,7 @@ export default async function Page({ searchParams }: PageProps) {
     <div>
       <h1>Einteilungstafel</h1>
       {alarm?.title && <h2>{alarm.title}</h2>}
-      {alarm && <AssignmentStarter alarm={alarm} />}
+      {tempAlarm && <AssignmentStarter alarm={tempAlarm} />}
 
       <div style={{ overflowX: "auto" }}>
       <table style={{ borderCollapse: "collapse", width: "100%", tableLayout: "fixed" }}>
@@ -100,9 +105,9 @@ export default async function Page({ searchParams }: PageProps) {
                 const opta = vehicle.opta;
                 const assignedMember = opta ? result?.[opta]?.[row] : undefined;
                 const member = assignedMember ? memberTagsById.get(assignedMember) : undefined;
-                const seatExistsForVehicle = opta
-                  ? row in (result?.[opta] ?? {})
-                  : false;
+                const seatExistsForVehicle =
+                opta ? row in (result?.[opta] ?? {})
+                     : false
                 const isSeatValid = opta ? validation?.[opta]?.[row] ?? true : true;
 
                 return (

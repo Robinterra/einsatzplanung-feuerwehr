@@ -3,6 +3,7 @@ import { MemberWithQualifications, seat } from "../db/queries";
 
 export function verifymemberQualificationsForSeat(member: MemberWithQualifications, vehicleOpta : string, seat: seat): boolean
 {
+
     if (seat.leadership === "TF" && !member.members.member_trainings_view.some(training => training.training.ref === "TF"))
     {
         return false;
