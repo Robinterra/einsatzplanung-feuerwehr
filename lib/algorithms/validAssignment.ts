@@ -70,11 +70,11 @@ export async function assignMembersToVehicles(vehicles: string[], signal?: Abort
     if (vehicleAssigned){assignedVehicles.push(vehicle)};
   }
   if (signal?.aborted) {
-    return assignedVehicles.map((vehicle) => vehicle.id);
+    return;
   }
 
   await assignMembersToSeats(einteilung, assignedVehicles.map(v => v.id));
-  return assignedVehicles.map((vehicle) => vehicle.id);
+  return;
 }
 
 
