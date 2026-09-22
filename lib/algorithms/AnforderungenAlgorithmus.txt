@@ -1,0 +1,9 @@
+Algo bekommt: 1. alle Fahrzeuge, die alamiert, aber noch nicht vollständig eingeteilt sind
+                2. abort Signal, falls Einteilung abgebrochen wird
+                return: gibt nichts zurück
+
+                Der Algorithmus speichert die Einteilung in der Datenbank 
+                    -> mit AssignMemebrsToSeats -> bekommt 1. record von SeatId zu MemberId
+                                                            2. Fahrzeuge, dessen Einteilung gespeichert werden soll
+                Jede Sitzzuweisung aus der Datenbank wird angezeigt -> sollte nicht mehr geändert werden
+                der Algorithmus kann die bisheriege Einteilung aus der Datenbank lesen 
