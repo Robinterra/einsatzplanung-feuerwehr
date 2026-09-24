@@ -41,4 +41,5 @@ export function hasAGTQualification(trainings: trainings_ref[] ): boolean {
     );
 }
 
+
 //allgemeine EInsatztauglichgeit fehlt

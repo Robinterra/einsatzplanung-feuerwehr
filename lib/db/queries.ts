@@ -5,6 +5,7 @@ export type MemberWithQualifications = Awaited<ReturnType<typeof getAvailableMem
 export type vehicleWithSeats = Awaited<ReturnType<typeof getVehiclesWithSeats>>[number];
 export type seat = vehicleWithSeats['seats'][number];
 
+
 export async function getAvailableMemberWithQualifications() {
     const members = await prisma.member_presence_view.findMany({
         where: {
