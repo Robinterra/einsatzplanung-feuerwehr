@@ -238,7 +238,7 @@ export async function getPresentMemberAssignments(vehicleID: string[]) {
                 seat.id ? memberBySeat.get(seat.id) ?? null : null,
             ]),
         );
-
+        
         return assignments;
     }, {});
 }
