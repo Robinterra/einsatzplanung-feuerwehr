@@ -1,5 +1,5 @@
 import AssignmentStarter from "./AssignmentStarter";
-import { getMemberInformation, getPresentMemberAssignments, getVehicles, getAlarmById} from "@/lib/db/queries";
+import { getMemberInformation, getPresentMemberAssignments, getVehicles,} from "@/lib/db/queries";
 import { MemberTag, NameTag } from "./nameTag";
 import { testQualificationsForVehicle } from "@/lib/testAssignment/testValidation";
 import { showAlarms } from "@/lib/divera/alarm";
