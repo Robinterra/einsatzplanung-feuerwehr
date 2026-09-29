@@ -1,6 +1,6 @@
 import { getAssignedVehicles } from "../db/queries";
 import { Alarm } from "../divera/alarm";
-import { assignMembersToVehicles } from "./validAssignment";
+import { assignMembersToVehicles } from "./assignmentAlgo";
 
 
 export async function startAssignment(alarm: Alarm,signal?: AbortSignal): Promise<void> 
