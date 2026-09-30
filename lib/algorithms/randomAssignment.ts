@@ -1,4 +1,3 @@
-/*"use server"
 import { getAvailableMembers, getVehiclesWithSeats } from "@/lib/db/queries";
 import { Alarm } from "@/lib/divera/alarm";
 
@@ -27,4 +26,4 @@ export async function verteileEinsatzkraefte(alarm: Alarm): Promise<Einteilung> 
   }
 
   return einteilung;
-}*/
+}
