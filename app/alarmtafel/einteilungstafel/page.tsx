@@ -1,5 +1,7 @@
 import AssignmentStarter from "./AssignmentStarter";
-import { getMemberInformation, getPresentMemberAssignments, getVehicles,} from "@/lib/db/queries";
+import DeleteAssignment from "./DeleteAssignment";
+import RestartAssignment from "./RestartAssignment";
+import { getMemberInformation, getPresentMemberAssignments, getVehicles} from "@/lib/db/queries";
 import { MemberTag, NameTag } from "./nameTag";
 import { testQualificationsForVehicle } from "@/lib/testAssignment/testValidation";
 import { showAlarms } from "@/lib/divera/alarm";
@@ -71,6 +73,8 @@ export default async function Page({ searchParams }: PageProps) {
       <h1>Einteilungstafel</h1>
       {alarm?.title && <h2>{alarm.title}</h2>}
       {alarmClean && <AssignmentStarter alarm={alarmClean} />}
+      {alarmClean && <DeleteAssignment alarm={alarmClean} />}
+      {alarmClean && <RestartAssignment alarm={alarmClean} />}
 
       <div style={{ overflowX: "auto" }}>
       <table style={{ borderCollapse: "collapse", width: "100%", tableLayout: "fixed" }}>
