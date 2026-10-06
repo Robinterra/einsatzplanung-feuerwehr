@@ -1,6 +1,7 @@
 import { pullDiveraAlarms } from "./API";
 import {getVehicles, getIDsOfVehicles} from "@/lib/db/queries";
-import {TODAY} from "@/lib/controlling/queries";
+
+const TODAY = new Date(1772319600 * 1000); //1772319600
 
 
 const vehicles = await getVehicles();

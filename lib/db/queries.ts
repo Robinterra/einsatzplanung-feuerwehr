@@ -1,7 +1,7 @@
 "use server";
 import { prisma } from "@/lib/db/prisma";
 
-export const TODAY = new Date(1772319600 * 1000); //1772319600
+const TODAY = new Date(1772319600 * 1000); //1772319600
 
 export type MemberWithQualifications = Awaited<
   ReturnType<typeof getAvailableMemberWithQualifications>
