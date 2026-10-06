@@ -41,12 +41,8 @@ export default function MyApp() {
     };
 
     router.push(
-<<<<<<< HEAD
 
       `/alarmtafel/einteilungstafel?alarm=${encodeURIComponent(JSON.stringify(selectedAlarm))}`,
-=======
-      `/alarmtafel/einteilungstafel?alarm=${encodeURIComponent(JSON.stringify(selectedAlarm))}`,//ToDo URL
->>>>>>> Controlling
     );
   }
 
