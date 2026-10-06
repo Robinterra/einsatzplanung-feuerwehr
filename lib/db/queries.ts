@@ -36,7 +36,7 @@ export async function getAvailableMemberWithQualifications() {
                         },
                         {
                             expiration: {
-                                gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                                gte: new Date(2026, 2, 15, 0, 0, 0, 0),
                             },
                         },
                     ],
@@ -316,7 +316,7 @@ export async function getMemberInformation(memberId:string) {
                         },
                         {
                             expiration: {
-                                gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                                gte: new Date(2026, 2, 15, 0, 0, 0, 0),
                             },
                         },
                     ],
@@ -394,7 +394,7 @@ export async function getTrainigs(memberId: string){
                 },
                 {
                     expiration: {
-                        gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                        gte: new Date(2026, 2, 15, 0, 0, 0, 0),
                     },
                 },
             ],
