@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db/prisma";
 import { trainings_ref } from "@prisma/client";
 
+export const TODAY = new Date(1789142000 * 1000);
+
 // #neu Member kommen an
 // INSERT INTO member_presence_logs (member_id, present)
 // select id, 1 from member_presence_view
@@ -11,7 +13,7 @@ import { trainings_ref } from "@prisma/client";
 export async function setPresence(memberIds: string[] | null, presence: boolean) 
 {
     if (!memberIds){
-        memberIds = (await getPresentMemberIds()).map(a => a.id);
+        memberIds = (await getMemberIds()).map(a => a.id);
     }
     await prisma.member_presence_logs.createMany({
         data: memberIds.map((memberIds) => ({
@@ -23,9 +25,6 @@ export async function setPresence(memberIds: string[] | null, presence: boolean)
 
 export async function getMembersWithRequiredQualifications(limit: number, reqTrainings: trainings_ref[] | null)
 {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     const members = await prisma.member_presence_view.findMany({
         take: limit,
         select: {
@@ -43,7 +42,7 @@ export async function getMembersWithRequiredQualifications(limit: number, reqTra
                             status: "passed",
                             OR: [
                                 { expiration: null },
-                                { expiration: { gte: today } },
+                                { expiration: { gte: TODAY } },
                             ],
                         },
                     },
@@ -81,6 +80,14 @@ export async function getPresentMemberIds() {
         },
         where: {
             present: 1,
+        },
+    })
+}
+
+export async function getMemberIds() {
+    return await prisma.member_presence_view.findMany({
+        select: {
+             id: true,
         },
     })
 }
