@@ -4,7 +4,7 @@ import { MemberWithQualifications, seat } from "../db/queries";
 export function verifyMemberIsMissonReady(member: MemberWithQualifications): boolean {
     if (!member.members.member_trainings_view.some(training => training.training.ref === "TM")) {
         if (!member.members.member_trainings_view.some(training => training.training.ref === "TF")) {
-            console.log("member is not TM or TF");
+            console.log("member is not TM nor TF");
             return false;
         }
     }
@@ -13,12 +13,11 @@ export function verifyMemberIsMissonReady(member: MemberWithQualifications): boo
 
 export function verifymemberQualificationsForSeat(member: MemberWithQualifications, vehicleOpta : string, seat: seat): boolean
 {
-    /*if(!member.members.member_trainings_view.some(training => training.training.ref === "TM")){
+    if(!member.members.member_trainings_view.some(training => training.training.ref === "TM")){
         if (!member.members.member_trainings_view.some(training => training.training.ref === "TF")){
-            console.log("member is not TM or TF");
             return false;
         }
-    }*/
+    }
     if (seat.leadership === "TF" && !member.members.member_trainings_view.some(training => training.training.ref === "TF"))
     {
         return false;

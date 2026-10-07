@@ -1,15 +1,14 @@
 import { SeatAssignments } from "./LisasAlgoritmus";
 import { assignMembersToSeats, vehicleWithSeats, seat } from "../db/queries";
-import { ALL } from "dns";
 
 //TODO: später anzeigereihenfolge aus Datei auslesen
 function filterSeats(
   einteilung: SeatAssignments,
   vehicles: vehicleWithSeats[],
 ): SeatAssignments {
-  function resetIfNotAllAssigned( //TODO auf belibige anzahl an sitzen erweitern, sowohl eingabe als auch löschen
-    assignedSeats: seat["seat"][],
+  function resetIfNotAllAssigned( //
     opta: string,
+    assignedSeats: seat["seat"][],  
     resetSeats?: seat["seat"][],
   ): boolean {
     if (resetSeats === undefined) {
@@ -27,7 +26,7 @@ function filterSeats(
       resetSeatIds.forEach((sid) => {
         einteilung[sid] = null;
       });
-      console.log("reseted from", opta);
+      console.log("reset from", opta);
     }
     return SomeNotAssigned;
   }
@@ -41,36 +40,33 @@ function filterSeats(
     WT,
     ST,
 
-    CREW: [...AT, ...WT, ...ST, "ME"],
+    CREW: [...AT, ...WT, ...ST, "ME", "MA"],
 
     ALL: ["GF", "MA", "ME", ...AT, ...WT, ...ST],
   };
 
-  //if 09-19-56 nicht voll, entferne Crew
+  //LFs Truppweise anzeigen:
+  let LFsNotFull = false;
+  for (const troup of [AT, WT, ST]) {
+    for (const opta of ["09-46-56", "80-44-01"]) {
+        LFsNotFull = resetIfNotAllAssigned(opta, [...troup, "GF"], troup) || LFsNotFull;
+    }
+  }
   
-  resetIfNotAllAssigned(seatGroups.ALL, "09-19-56", seatGroups.CREW);
-  //if 09-46-56 Truppweise anzeigen
 
+  //09-65-56 Maschi anzeigen bzw GF(TF) und ME zurücksetzen
 
-  let reseted = false;
-  Object.values(seatGroups).forEach((seats) => {
-    reseted = resetIfNotAllAssigned(seats, "09-46-56") && reseted;
-  });
+  resetIfNotAllAssigned("09-65-56", ["GF", "MA"], ["MA", "ME"]);
+  resetIfNotAllAssigned("09-65-56", ["GF", "MA", "ME"], ["ME"]);
 
-  Object.values(seatGroups).forEach((seats) => {
-    reseted = resetIfNotAllAssigned(seats, "80-44-01") && reseted;
-  });
-
-  //if 09-65-56 Maschi anzeigen
-  resetIfNotAllAssigned(["GF", "MA", "ME"], "09-65-56", ["MA"]);
-
-  //ELW und GWL alles anzeigen, sobald LFs voll
-  if (reseted) {
-    resetIfNotAllAssigned(seatGroups.ALL, "09-19-56", seatGroups.CREW);
-    resetIfNotAllAssigned(seatGroups.ALL, "09-64-56", [...seatGroups.CREW, "MA"]);
+  //ELW und GWL alles anzeigen, sobald LFs voll. Sonst nur GF anzeigen
+  if (LFsNotFull
+  ) {
+    resetIfNotAllAssigned("09-19-56", seatGroups.ALL, seatGroups.CREW);
+    resetIfNotAllAssigned("09-64-56", seatGroups.ALL, seatGroups.CREW);
   }
   //if 09-67-56 Nur vollständig anzeigen
-  resetIfNotAllAssigned(seatGroups.ALL, "09-67-56")
+  resetIfNotAllAssigned("09-67-56", seatGroups.ALL, seatGroups.ALL)
   //
   //TODO
   return einteilung;
