@@ -26,9 +26,9 @@ const einteilung: SeatAssignments = {};
 export async function assignMembersToVehicles(
   vehicles: string[],
   signal?: AbortSignal,
-) {
+): Promise<boolean> {
   if (signal?.aborted) {
-    return [];
+    return true;
   }
   const availableMembers: MemberWithQualifications[] =
     await getAvailableMemberWithQualifications();
@@ -40,12 +40,14 @@ export async function assignMembersToVehicles(
   const seatsInAssignmentOrder = await orderSeats(vehiclesWithSeats);
 
   const assignedSeats = (await getAssignedSeatIds()).map((s) => s.seat_id); //TODO: irgendwas falsch, Member werden geswitcht
+  let assignmetFinished = true;
 
   for (const seatId of seatsInAssignmentOrder) {
     if (assignedSeats.includes(seatId)) {
       console.log("Seat is already assigned.");
       continue;
     }
+    assignmetFinished = false;
     if (availableMembers.length === 0) {
       break;
     }
@@ -64,7 +66,7 @@ export async function assignMembersToVehicles(
     vehiclesWithSeats,
   );
   saveAssignment(modifiedAssignment, vehiclesWithSeats);
-  return;
+  return assignmetFinished;
 }
 async function modifyAssignment(
   einteilung: SeatAssignments,
@@ -203,7 +205,6 @@ function findAndSetMember(
   }
 }
 
-//TODO: erst ST, dann ME
 async function orderSeats(vehiclesWithSeats: vehicleWithSeats[]): Promise<string[]> {
   const seatsInAssignmentOrder: string[] = [];
 

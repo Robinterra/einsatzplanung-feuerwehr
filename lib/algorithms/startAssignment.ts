@@ -17,14 +17,14 @@ export async function startAssignment(alarm: Alarm,signal?: AbortSignal): Promis
         vehiclesToBeAssigned = vehiclesToBeAssigned.filter((vehicleId) => !assignedVehicleIds.has(vehicleId),);//schon eingeteilte Fahrzeuge werden direkt aus den einzuteilenden Fahrzeugen genommen
         console.log("Zyklus %d. Noch nicht assiged:", i, vehiclesToBeAssigned);
         i++;
-        await assignMembersToVehicles(vehiclesToBeAssigned, signal);
+        const assignmentFinished = await assignMembersToVehicles(vehiclesToBeAssigned, signal);
 
         if (signal?.aborted) 
         {
             return;
         }
 
-        if (vehiclesToBeAssigned.length === 0) 
+        if (assignmentFinished) 
         {
             return;
         }
