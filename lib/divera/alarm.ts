@@ -1,6 +1,8 @@
 import { pullDiveraAlarms } from "./API";
 import {getVehicles, getIDsOfVehicles} from "@/lib/db/queries";
 
+const TODAY = new Date(1772319600 * 1000); //1772319600
+
 
 const vehicles = await getVehicles();
 
@@ -27,11 +29,12 @@ export async function showAlarms(): Promise<Alarm[] | null> {
 export async function filterAlarms(): Promise<Alarm[] | null> {
     const alarmItems = await pullDiveraAlarms();
     const newAlarms: Alarm[] = [];
-    const now = 1789152297; //Math.floor(Date.now() / 1000);
     const oneDay = 24 * 60 * 60;
+    const minute = 60;
+    
 
     for (const alarmItem of alarmItems) {
-        if (alarmItem.vehicles.length > 0 &&  alarmItem.date > now - oneDay) {
+        if (alarmItem.vehicles.length > 0 && Number(alarmItem.date) > Number(TODAY)/1000 - oneDay) {
             const newAlarm = new Alarm();
             newAlarm.kindOfAlarm = alarmItem.title.split(" ")[0] as KindOfAlarm;
             newAlarm.alarmcode_id = alarmItem.alarmcode_id;
@@ -40,7 +43,7 @@ export async function filterAlarms(): Promise<Alarm[] | null> {
                 alarmItem.vehicles.map((vehicle) => parseOpta(vehicle))
             )).filter((value) => value && value.trim().length > 0);
             newAlarm.vehicles = await getIDsOfVehicles(vehicleOptas);
-            newAlarm.timePassed = now - alarmItem.date;
+            newAlarm.timePassed = Number(TODAY)/1000 - Number(alarmItem.date);
 
             newAlarms.push(newAlarm);
         }

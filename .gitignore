@@ -10,6 +10,7 @@ test-args.txt
 .\#*
 bin/
 obj/
+.env copy
 migrations/
 tests/baselines/local/*
 tests/baselines/local.old/*

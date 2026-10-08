@@ -13,18 +13,16 @@ import { verifymemberQualificationsForSeat } from "./rules";
 type SeatAssignments = Record<string, string | null>;
 type PresavedAssignment = {vehicleId : string; seatId: string};
 
-class Index{
-  static i = 0;
-}
-
 export async function assignMembersToVehicles(vehicles: string[], signal?: AbortSignal) {
+  const vehiclesWithSeats = await getVehiclesWithSeats(vehicles ?? []);
+  const assignedVehicles: vehicleWithSeats[] = [];
   if (signal?.aborted) {
     return;
   }
+  console.log("fahrzeuge:", vehiclesWithSeats.length, "zugewiesen:", assignedVehicles.length);
   const availableMembers : MemberWithQualifications[] = await getAvailableMemberWithQualifications();
   const einteilung: SeatAssignments = {};
-  const vehiclesWithSeats = await getVehiclesWithSeats(vehicles ?? []);
-  const assignedVehicles: vehicleWithSeats[] = [];
+  
   
 
   const availableZF = createNewSet(availableMembers, trainings_ref.ZF);
@@ -55,21 +53,14 @@ export async function assignMembersToVehicles(vehicles: string[], signal?: Abort
   console.log("MA:",availableMA.size);
   console.log("AGT:",availableAGT.size);
 
-  const orderedSeats = vehiclesWithSeats.flatMap((vehicle)=>
-    vehicle.seats.map((seat)=>({vehicle, seat}))
-  ).sort((a, b)=> getRarity(a.seat, orderedBySize) - getRarity(b.seat, orderedBySize));
-
   const presavedAssignment = new Map<string, PresavedAssignment>();
-  console.log(Index.i);
-  /*
-  Also zuerst nach seltenheit der sitze im verhältnis zur anzahl der member mit der quali gehen
-  Die Sitze nacheinander besetzen (vormerken wer wo sitzt)
-  Volle Fahrzeuge abspeichern -> Member entfernen die platziert wurden
-  wenn das nicht funktioniert nach fahrzeug und seltenheit sortieren
-  */
-  if (Index.i < 4) {
-    Index.i += 1;
-    for (const {vehicle, seat} of orderedSeats) {
+
+  for (const vehicle of vehiclesWithSeats) {
+    presavedAssignment.clear();
+    const weigthedSeats = vehicle.seats
+      .map((seat) => ({vehicle, seat}))
+      .sort((a, b) => getRarity(a.seat, orderedBySize) - getRarity(b.seat, orderedBySize));
+    for (const {vehicle, seat} of weigthedSeats) {
       if (signal?.aborted) {
         return assignedVehicles.map((vehicle)=>vehicle.id)
       }
@@ -101,119 +92,49 @@ export async function assignMembersToVehicles(vehicles: string[], signal?: Abort
           seatId : seat.id
         });
       }
-      checkForFullVehicles : for (const vehicle of vehiclesWithSeats) {
-        const currentVehicleAssignment : SeatAssignments = {};
-        for (const seat of vehicle.seats) {
-          const memberId = [...presavedAssignment.entries()]
-            .find(([_, assignment]) =>
-              assignment.vehicleId === vehicle.id &&
-              assignment.seatId === seat.id
-            )?.[0];
+    }
+    if (vehicle.seats.every((seat) => [...presavedAssignment.values()].some((assignment) => assignment.seatId === seat.id))) {
+      
+    }
+    checkForFullVehicles : for (const seat of vehicle.seats) {
+      const currentVehicleAssignment : SeatAssignments = {};
+      for (const seat of vehicle.seats) {
+        const memberId = [...presavedAssignment.entries()]
+          .find(([_, assignment]) =>
+            assignment.vehicleId === vehicle.id &&
+            assignment.seatId === seat.id
+          )?.[0];
 
-          if (!memberId) {
-            continue checkForFullVehicles;
-          }
-
-          currentVehicleAssignment[seat.id] = memberId;
+        if (!memberId) {
+          continue checkForFullVehicles;
         }
-        for (const memberId of Object.values(currentVehicleAssignment)) {
-          if (!memberId) continue;
 
-          const member = availableMembers.find(
-            (member) => member.id === memberId
-          );
+        currentVehicleAssignment[seat.id] = memberId;
+      }
+      for (const memberId of Object.values(currentVehicleAssignment)) {
+        if (!memberId) continue;
 
-          if (member) {
-            removeMemberFromSets(member, orderedBySize);
-            removeMemberFromSets(member, [{members : availableOthers}]);
-          }
+        const member = availableMembers.find(
+          (member) => member.id === memberId
+        );
+
+        if (member) {
+          removeMemberFromSets(member, orderedBySize);
+          removeMemberFromSets(member, [{members : availableOthers}]);
         }
+      }
+      if (!assignedVehicles.some((v) => v.id === vehicle.id)) {
         assignedVehicles.push(vehicle);
-        for (const seat of Object.keys(currentVehicleAssignment)) {
-          einteilung[seat] = currentVehicleAssignment[seat];
-        }
+      }
+      for (const seat of Object.keys(currentVehicleAssignment)) {
+        einteilung[seat] = currentVehicleAssignment[seat];
       }
     }
-  } else {
-    for (const vehicle of vehiclesWithSeats) {
-      presavedAssignment.clear();
-      const weigthedSeats = vehicle.seats
-        .map((seat) => ({vehicle, seat}))
-        .sort((a, b) => getRarity(a.seat, orderedBySize) - getRarity(b.seat, orderedBySize));
-      for (const {vehicle, seat} of weigthedSeats) {
-        if (signal?.aborted) {
-          return assignedVehicles.map((vehicle)=>vehicle.id)
-        }
-        let assignedMember : MemberWithQualifications | undefined;
-        const requiredTrainings = getRequiredTrainings(seat);
-        if (requiredTrainings.length > 0) {
-          const candidateGroups = orderedBySize.filter(({ training })=> requiredTrainings.includes(training));
-          for (const group of candidateGroups) {
-            assignedMember = [...group.members].find((member)=>
-              !presavedAssignment.has(member.id) && 
-              verifymemberQualificationsForSeat(member, vehicle.opta, seat));
-            if (assignedMember) {
-              break;
-            }
-          }
-        } else {
-          assignedMember = [...availableOthers].find((member)=>
-            !presavedAssignment.has(member.id) &&
-            verifymemberQualificationsForSeat(member, vehicle.opta, seat));
-          if (!assignedMember) {
-            assignedMember = availableMembers.find((member)=>
-            !presavedAssignment.has(member.id) &&
-            verifymemberQualificationsForSeat(member, vehicle.opta, seat));
-          }
-        }
-        if (assignedMember) {
-          presavedAssignment.set(assignedMember.id, {
-            vehicleId : vehicle.id,
-            seatId : seat.id
-          });
-        }
-        checkForFullVehicles : for (const vehicle of vehiclesWithSeats) {
-          const currentVehicleAssignment : SeatAssignments = {};
-          for (const seat of vehicle.seats) {
-            const memberId = [...presavedAssignment.entries()]
-              .find(([_, assignment]) =>
-                assignment.vehicleId === vehicle.id &&
-                assignment.seatId === seat.id
-              )?.[0];
-
-            if (!memberId) {
-              continue checkForFullVehicles;
-            }
-
-            currentVehicleAssignment[seat.id] = memberId;
-          }
-          for (const memberId of Object.values(currentVehicleAssignment)) {
-            if (!memberId) continue;
-
-            const member = availableMembers.find(
-              (member) => member.id === memberId
-            );
-
-            if (member) {
-              removeMemberFromSets(member, orderedBySize);
-              removeMemberFromSets(member, [{members : availableOthers}]);
-            }
-          }
-          assignedVehicles.push(vehicle);
-          for (const seat of Object.keys(currentVehicleAssignment)) {
-            einteilung[seat] = currentVehicleAssignment[seat];
-          }
-        }
-      }
-    }
+    
   }
   if (signal?.aborted) {
     return;
   }
-  if (assignedVehicles.length === vehiclesWithSeats.length) {
-    Index.i = 0;
-  }
-
   await assignMembersToSeats(einteilung, assignedVehicles.map(v => v.id));
   return;
 }
@@ -263,3 +184,7 @@ function removeMemberFromSets(
     group.members.delete(member);
   }
 }
+
+/*
+  
+*/
