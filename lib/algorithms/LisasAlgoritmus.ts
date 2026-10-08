@@ -11,10 +11,13 @@ import {
   vehicleWithSeats,
   getAssignedSeatIds,
 } from "../db/queries";
-import { verifymemberQualificationsForSeat,
-  verifyMemberIsMissonReady
- } from "./rules";
+import {
+  verifymemberQualificationsForSeat,
+  verifyMemberIsMissonReady,
+} from "./rules";
 import { saveAssignment } from "./saveAssignment";
+import path from "path";
+import { readFile } from "fs/promises";
 
 export type SeatAssignments = Record<string, string | null>;
 
@@ -29,18 +32,21 @@ export async function assignMembersToVehicles(
   }
   const availableMembers: MemberWithQualifications[] =
     await getAvailableMemberWithQualifications();
-  availableMembers.filter((member) => {return verifyMemberIsMissonReady(member)});
+  availableMembers.filter((member) => {
+    return verifyMemberIsMissonReady(member);
+  });
   console.log("members:", availableMembers.length);
   const vehiclesWithSeats = await getVehiclesWithSeats(vehicles ?? []);
-  const assignedVehicles: typeof vehiclesWithSeats = [];
-  const seatsInAssignmentOrder = orderSeats(vehiclesWithSeats);
+  const seatsInAssignmentOrder = await orderSeats(vehiclesWithSeats);
 
   const assignedSeats = (await getAssignedSeatIds()).map((s) => s.seat_id); //TODO: irgendwas falsch, Member werden geswitcht
 
   for (const seatId of seatsInAssignmentOrder) {
-    if (assignedSeats.includes(seatId)) continue;
+    if (assignedSeats.includes(seatId)) {
+      console.log("Seat is already assigned.");
+      continue;
+    }
     if (availableMembers.length === 0) {
-      //vehicleAssigned = false;
       break;
     }
     const vehicle = vehiclesWithSeats.find((vehicle) =>
@@ -53,7 +59,10 @@ export async function assignMembersToVehicles(
     findAndSetMember(availableMembers, seat, vehicle.opta);
   }
 
-  const modifiedAssignment = await modifyAssignment(einteilung, vehiclesWithSeats);
+  const modifiedAssignment = await modifyAssignment(
+    einteilung,
+    vehiclesWithSeats,
+  );
   saveAssignment(modifiedAssignment, vehiclesWithSeats);
   return;
 }
@@ -80,9 +89,29 @@ async function modifyAssignment(
   }
   //if ATM HLF leer, setzte ATF KatS, if WTM HLF leer, setzte WTF KatS
   console.log("moving AGTs");
-  moveMember({ seat: "ATF", opta: "80-44-01" }, { seat: "ATM", opta: "09-46-56" });
-  moveMember({ seat: "WTF", opta: "80-44-01" }, { seat: "WTM", opta: "09-46-56" });
+ 
+  moveMember(
+    { seat: "WTF", opta: "80-44-01" },//find ATM für HLF
+    { seat: "ATM", opta: "09-46-56" },
+  );
+   moveMember(
+    { seat: "ATF", opta: "80-44-01" },
+    { seat: "ATM", opta: "09-46-56" },
+  );
+  moveMember(
+    { seat: "WTF", opta: "09-46-56" },
+    { seat: "ATM", opta: "09-46-56" },
+  );
+  moveMember(
+    { seat: "WTF", opta: "80-44-01" },//find WTM für HLF
+    { seat: "WTM", opta: "09-46-56" },
+  );
+  moveMember(
+    { seat: "ATF", opta: "80-44-01" },
+    { seat: "WTM", opta: "09-46-56" },
+  );
   
+
   const requiredHLFSeats = ["MA", "ATF", "ATM", "WTF", "WTM"];
   const HLFisStaffel = requiredHLFSeats.every((seatName) => {
     const seat = vehiclesWithSeats
@@ -100,9 +129,17 @@ async function modifyAssignment(
     );
   }
 
-  const GF1 = await getMemberInformation(einteilung[vehiclesWithSeats.find((vehicle) => vehicle.opta === "09-46-56")?.seats.find((seat) => seat.seat === "GF")?.id]);
-  const GF1isZF = GF1?.trainings.includes("ZF");
-  const GF2Id = vehiclesWithSeats.find((vehicle) => vehicle.opta === "80-44-01")?.seats.find((seat) => seat.seat === "GF")?.id;
+  const GF1 =
+    einteilung[
+      vehiclesWithSeats
+        .find((vehicle) => vehicle.opta === "09-46-56")
+        ?.seats.find((seat) => seat.seat === "GF")?.id
+    ];
+  const GF1withInfo = await getMemberInformation(GF1 ?? "");
+  const GF1isZF = GF1withInfo?.trainings.includes("ZF");
+  const GF2Id = vehiclesWithSeats
+    .find((vehicle) => vehicle.opta === "80-44-01")
+    ?.seats.find((seat) => seat.seat === "GF")?.id;
   const GF2exsits = einteilung[GF2Id] != null;
 
   if (GF1isZF && GF2exsits) {
@@ -122,7 +159,6 @@ async function modifyAssignment(
   }
   return einteilung;
 }
-
 
 function makeSet(
   reqQualis: trainings_ref[],
@@ -167,108 +203,28 @@ function findAndSetMember(
   }
 }
 
-//TODO: später Reihenfolge aus Datei auslesen
-function orderSeats(vehiclesWithSeats: vehicleWithSeats[]): string[] {
+//TODO: erst ST, dann ME
+async function orderSeats(vehiclesWithSeats: vehicleWithSeats[]): Promise<string[]> {
   const seatsInAssignmentOrder: string[] = [];
-  //   1. ELW Zugführer -> direkt anzeigen ✅ -> wenn kein zweiter GF kommt, muss erster ZF GF werden
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "09-19-56")
-      ?.seats.find((seat) => seat.seat === "GF").id,
-  );
-  //     2. Maschi für alle ausser ELW -> bevorzugt ohne Gruppenführer
-  seatsInAssignmentOrder.push(
-    ...vehiclesWithSeats
-      .filter((vehicle) => vehicle.opta != "09-19-56")
-      .flatMap((vehicle) => vehicle.seats)
-      .filter((seat) => seat.seat === "MA")
-      .map((seat) => seat.id),
-  );
-  //     3. Gruppenführer für HLF und KatS -> ✅
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "09-46-56")
-      ?.seats.find((seat) => seat.seat === "GF").id,
-  );
 
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "80-44-01")
-      ?.seats.find((seat) => seat.seat === "GF").id,
-  );
-  //     4. AGTs mit TF für HLF und KatS
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "09-46-56")
-      ?.seats.find((seat) => seat.seat === "ATF").id,
-  );
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "09-46-56")
-      ?.seats.find((seat) => seat.seat === "WTF").id,
-  );
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "80-44-01")
-      ?.seats.find((seat) => seat.seat === "ATF").id,
-  );
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "80-44-01")
-      ?.seats.find((seat) => seat.seat === "WTF").id,
-  );
-  //     6. HLF voll ✅
-  seatsInAssignmentOrder.push(
-    ...(vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "09-46-56")
-      ?.seats.filter((seat) => !seatsInAssignmentOrder.includes(seat.id))
-      ?.map((seat) => seat.id) ?? []),
-  );
-  //     7. TF, bevorzugt auch Maschi für WLF ✅
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "09-65-56")
-      ?.seats.find((seat) => seat.seat === "GF").id,
-  );
-  //     9. KatS voll -> wenn keine AGTS mehr, wird WTF zu ATM ✅ (wenn voll)
-  seatsInAssignmentOrder.push(
-    ...(vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "80-44-01")
-      ?.seats.filter((seat) => !seatsInAssignmentOrder.includes(seat.id))
-      ?.map((seat) => seat.id) ?? []),
-  );
-  //     8. Funker und Maschinist auf ELW -> am besten ohne AGT, aber vielleicht mit TF => Funker ist kein trainingsref ✅
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "09-19-56")
-      ?.seats.find((seat) => seat.seat === "MA").id,
-  );
+  function findAndPushSeat(opta: string, seatName: seat["seat"]) {
+    const seatId = vehiclesWithSeats
+      .find((vehicle) => vehicle.opta === opta)
+      ?.seats.find((seat) => seat.seat === seatName)?.id;
+    if (seatId && !seatsInAssignmentOrder.includes(seatId)) {
+      seatsInAssignmentOrder.push(seatId);
+    }
+  }
 
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "09-19-56")
-      ?.seats.find((seat) => seat.seat === "ATF").id,
-  );
-  // GF auf GW-L
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "09-64-56")
-      ?.seats.find((seat) => seat.seat === "GF").id,
-  );
-  //     9. Maschinist auf GW-L
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "09-64-56")
-      ?.seats.find((seat) => seat.seat === "MA").id,
-  );
+  const filePath = path.join(process.cwd(), "public", "seatOrder.csv");
+  const fileContent = await readFile(filePath, "utf-8");
 
-  //     10. Restlich AGT auf GW-L
-  seatsInAssignmentOrder.push(
-    vehiclesWithSeats
-      .find((vehicle) => vehicle.opta === "09-64-56")
-      ?.seats.find((seat) => !seatsInAssignmentOrder.includes(seat.id)).id,
-  );
-  //     11. Restliche PLätze nach Ankunftszeit besetzen
+  for (const line of fileContent.split(/\r?\n/)) {
+    const [opta, seatName] = line.split(";").map((value) => value.trim());
+    if (opta && seatName) {
+      findAndPushSeat(opta, seatName as seat["seat"]);
+    }
+  }
 
   vehiclesWithSeats.forEach((vehicle) => {
     vehicle.seats.forEach((seat) => {

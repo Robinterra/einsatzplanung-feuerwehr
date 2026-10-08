@@ -66,7 +66,7 @@ function filterSeats(
     resetIfNotAllAssigned("09-64-56", seatGroups.ALL, seatGroups.CREW);
   }
   //if 09-67-56 Nur vollständig anzeigen
-  resetIfNotAllAssigned("09-67-56", seatGroups.ALL, seatGroups.ALL)
+  resetIfNotAllAssigned("09-67-56", ["GF", "MA"])
   //
   //TODO
   return einteilung;
