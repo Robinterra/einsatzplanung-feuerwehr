@@ -53,7 +53,7 @@ export default async function Page({ searchParams }: PageProps) {
     new Set(
       Object.values(result)
         .flatMap((vehicleAssignments) => Object.values(vehicleAssignments))
-        .filter((memberId): memberId is string => memberId !== null),
+        .filter((memberId): memberId is string => !!memberId),
     ),
   );
   const memberTags = (

@@ -34,7 +34,7 @@ export async function filterAlarms(): Promise<Alarm[] | null> {
     
 
     for (const alarmItem of alarmItems) {
-        if (alarmItem.vehicles.length > 0 && Number(alarmItem.date) > Number(TODAY)/1000 - oneDay) {
+        if (alarmItem.vehicles.length > 0 && alarmItem.date > Number(TODAY)/1000 - oneDay) {
             const newAlarm = new Alarm();
             newAlarm.kindOfAlarm = alarmItem.title.split(" ")[0] as KindOfAlarm;
             newAlarm.alarmcode_id = alarmItem.alarmcode_id;

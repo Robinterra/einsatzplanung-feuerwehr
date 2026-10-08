@@ -88,48 +88,56 @@ export async function assignMembersToSeats(
     ([, memberId]) => !!memberId,
   );
 
-  if (entries.length === 0 || Vehicles.length === 0) {
+  if (entries.length === 0 || !Vehicles?.length) {
     return [];
   }
 
-  const updates = await Promise.all(
-    entries.map(async ([seatId, memberId]) => {
-      if (!memberId) return null;
+  const updates = [];
+  const assignedMembers = new Set<string>();
 
-      const latestPresence = await prisma.member_presence_logs.findFirst({
-        where: {
-          member_id: memberId,
-        },
-        orderBy: {
-          timestamp: "desc",
-        },
-      });
+  // Process writes one at a time: concurrent updates to presence-log rows can
+  // cause MariaDB's adapter to report that a record changed since it was read.
+  for (const [seatId, memberId] of entries) {
+    if (!memberId || assignedMembers.has(memberId)) continue;
 
-      if (!latestPresence) return null;
+    const latestPresence = await prisma.member_presence_logs.findFirst({
+      where: {
+        member_id: memberId,
+      },
+      orderBy: {
+        timestamp: "desc",
+      },
+    });
 
-      const vehicleReady = await prisma.vehicle_seats.findFirst({
-        where: {
-          id: seatId,
-          vehicle_id: { in: Vehicles },
-        },
-      });
+    if (!latestPresence) continue;
 
-      if (!vehicleReady) return null;
+    const vehicleReady = await prisma.vehicle_seats.findFirst({
+      where: {
+        id: seatId,
+        vehicle_id: { in: Vehicles },
+      },
+    });
 
-      return prisma.member_presence_logs.update({
-        where: {
-          id: latestPresence.id,
-        },
-        data: {
-          seat_id: seatId ?? null,
-        },
-      });
-    }),
-  );
+    if (!vehicleReady) continue;
 
-  return updates.filter(
-    (result): result is NonNullable<typeof result> => result !== null,
-  );
+    // updateMany issues a single atomic UPDATE instead of Prisma's read-then-
+    // update operation, avoiding stale-record conflicts under concurrent calls.
+    const result = await prisma.member_presence_logs.updateMany({
+      where: {
+        id: latestPresence.id,
+      },
+      data: {
+        seat_id: seatId,
+      },
+    });
+
+    if (result.count > 0) {
+      assignedMembers.add(memberId);
+      updates.push(result);
+    }
+  }
+
+  return updates;
 }
 
 export async function confirmVehicleInstruction(

@@ -5,7 +5,8 @@ import {getPresentMemberAssignments} from "../db/queries"
 
 export async function deleteAssignment() {
     console.log("deleteAssignment called");
-    await setPresence(null, true);
+    const presentMemberIds = await getPresentMemberIds();
+    await setPresence(presentMemberIds.map(m => m.id), true);
 }
 
 export async function deleteAssignmentForVehicles(vehicleIds: string[])

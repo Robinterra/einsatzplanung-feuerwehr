@@ -18,7 +18,7 @@ export default function DeleteAssignment({ alarm }: DeleteAssignmentProps) {
         }),
         });
     }
-
+//TODO: Einteilung wieder stoppbar, wenn neu gestartet
     return (
         <button type="button" onClick={handleDelete}>
         Einteilung löschen
