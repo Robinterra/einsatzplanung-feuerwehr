@@ -21,6 +21,7 @@ export async function getAvailableMemberWithQualifications() {
       id: true,
       first_name: true,
       last_name: true,
+      presence_timestamp: true,
       members: {
         select: {
           member_trainings_view: {
