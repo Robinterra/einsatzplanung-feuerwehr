@@ -428,4 +428,19 @@ export async function getTrainigs(memberId: string) {
   return trainings.map((memberTraining) => memberTraining.training.ref);
 }
 
+export async function getDBIdsOfMembers(memberIds: string[]) {
+  const members = await prisma.members.findMany({
+    where: {
+      personnel_nr: {
+        in: memberIds.map((id) => Number(id)),
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return members.map((member) => member.id);
+}
+
 /* Alle Menschen die Anwesend sind, davon die Personalnummer, Qualifikation (AGT, Fahrzeuge, TH, Führungslehrgang) */

@@ -1,5 +1,6 @@
 "use client";
 
+import StartTest from "./startTests";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Alarm } from "@/lib/divera/alarm";
@@ -34,6 +35,7 @@ export default function MyApp() {
   const router = useRouter();
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
+  const [, setSavedTestText] = useState("");
 
   function handleStartAssignment(alarm: Alarm) {
     const selectedAlarm = {
@@ -63,6 +65,7 @@ export default function MyApp() {
     <div>
       <h1>Alarmtafel</h1>
       <RefreshButton title="Einsätze abrufen" onClick={getAlarms} />
+      <StartTest onSave={setSavedTestText} />
 
       {errorMessage && <p style={{ color: "crimson" }}>{errorMessage}</p>}
 
