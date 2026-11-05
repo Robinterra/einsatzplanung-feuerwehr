@@ -147,6 +147,7 @@ export default function StartTest({ onSave }: { onSave: (text: string) => void }
         aria-label="Text für den Test"
         value={text}
         rows={1}
+        style={{ width: "25%", boxSizing: "border-box" }}
         onChange={(event) => setText(event.target.value)}
         disabled={isStarting || activeAlarmId !== null}
       />

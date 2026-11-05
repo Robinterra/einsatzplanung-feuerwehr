@@ -41,7 +41,7 @@ export async function assignMembersToVehicles(vehicles: string[], signal?: Abort
     { training: trainings_ref.MA, members: availableMA },
     { training: trainings_ref.AGT, members: availableAGT },
   ].sort((a, b) => a.members.size - b.members.size);
-  
+  /*
     console.log("ZF:",availableZF.size);
     console.log("GF:",availableGF.size);
     console.log("TF:",availableTF.size);
@@ -97,7 +97,7 @@ export async function assignMembersToVehicles(vehicles: string[], signal?: Abort
       }
     }
     if (vehicleAssigned) {
-      console.log(einteilung);
+      //console.log(einteilung);
       await assignMembersToSeats(einteilung, [vehicle.id]);
       for (const memberId of Object.values(einteilung)) {
         const member = availableMembers.find((member) => member.id === memberId);

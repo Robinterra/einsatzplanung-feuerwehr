@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { assignMembersToVehicles as assignWithLisaAlgorithm } from "@/lib/algorithms/LisasAlgoritmus";
-import { assignMembersToVehicles as assignWithDefaultAlgorithm } from "@/lib/algorithms/assignmentAlgo";
+import { assignMembersToVehicles as assignWithNiklasAlgorithm } from "@/lib/algorithms/assignmentAlgo";
 import { startAssignment, type AssignmentAlgorithm } from "@/lib/algorithms/startAssignment";
 import {
   registerAssignment,
@@ -13,7 +13,7 @@ import { showAlarms } from "@/lib/divera/alarm";
 import { setPresence } from "@/lib/controlling/queries";
 
 const assignmentAlgorithms: Record<string, AssignmentAlgorithm> = {
-  assignmentAlgo: assignWithDefaultAlgorithm,
+  assignmentAlgo: assignWithNiklasAlgorithm,
   LisasAlgoritmus: assignWithLisaAlgorithm,
 };
 
