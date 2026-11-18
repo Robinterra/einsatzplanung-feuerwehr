@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+// hier weitere Imports für Algorithmen einfügen
 import { assignMembersToVehicles as assignWithLisaAlgorithm } from "@/lib/algorithms/LisasAlgoritmus";
 import { assignMembersToVehicles as assignWithNiklasAlgorithm } from "@/lib/algorithms/assignmentAlgo";
+
+
 import { startAssignment, type AssignmentAlgorithm } from "@/lib/algorithms/startAssignment";
 import {
   registerAssignment,
@@ -12,6 +15,8 @@ import {
 import { showAlarms } from "@/lib/divera/alarm";
 import { setPresence } from "@/lib/controlling/queries";
 
+
+// hier die Algorithmen einfügen, die verfügbar sein sollen
 const assignmentAlgorithms: Record<string, AssignmentAlgorithm> = {
   assignmentAlgo: assignWithNiklasAlgorithm,
   LisasAlgoritmus: assignWithLisaAlgorithm,

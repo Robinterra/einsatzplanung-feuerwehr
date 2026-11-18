@@ -66,7 +66,7 @@ export async function startAssignment(
         (
             (resolve) => 
             {
-            const timeout = setTimeout(resolve, 5_000);
+            const timeout = setTimeout(resolve, 2_000);
             signal?.addEventListener("abort", () => 
                 {
                     clearTimeout(timeout); 
