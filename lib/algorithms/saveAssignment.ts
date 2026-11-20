@@ -1,7 +1,6 @@
 import { SeatAssignments } from "./LisasAlgoritmus";
 import { assignMembersToSeats, vehicleWithSeats, seat } from "../db/queries";
-
-//TODO: später anzeigereihenfolge aus Datei auslesen
+//truppweises anziegen und resetten entfernen, dafür nur abspeichern, wennn der seat neu ist
 function filterSeats(
   einteilung: SeatAssignments,
   vehicles: vehicleWithSeats[],

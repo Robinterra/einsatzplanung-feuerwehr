@@ -28,7 +28,6 @@ import {
   verifymemberQualificationsForSeat,
   verifyMemberIsMissonReady,
 } from "./rules";
-import { saveAssignment } from "./saveAssignment";
 import path from "path";
 import { readFile } from "fs/promises";
 
@@ -62,17 +61,30 @@ export async function assignMembersToVehicles(
   const vehiclesWithSeats = await getVehiclesWithSeats(vehicles ?? []);
   const seatsInAssignmentOrder = await orderSeats(vehiclesWithSeats);
 
-  const assignedSeats = (await getAssignedSeatIds()).map((s) => s.seat_id);
+  const prevAssignment: SeatAssignments = {};
+    (await getAssignedSeatIds()).forEach(({ seat_id, member_id }) => {
+      if (seat_id) {
+        prevAssignment[seat_id] = member_id;
+        einteilung[seat_id] = member_id;
+      }
+    });
+  
+  
   let assignmetFinished = true;
-  let i = 0;
 
-  const remainingSeats = deleteAlreadyAssignedSeats(seatsInAssignmentOrder, assignedSeats);
+
+  //const remainingSeats = deleteAlreadyAssignedSeats(seatsInAssignmentOrder, assignedSeats);
   for (const member of availableMembers) {
     if (availableMembers.length === 0) {
       break;
     }
-    for (const seatId of remainingSeats) {
+    for (const seatId of seatsInAssignmentOrder) {
       assignmetFinished = false;
+
+      if (einteilung[seatId]) {
+        continue; // Skip already assigned seats
+      }
+
 
       const vehicle = vehiclesWithSeats.find((vehicle) =>
         vehicle.seats.some((seat) => seat.id === seatId),
@@ -94,7 +106,7 @@ export async function assignMembersToVehicles(
     einteilung,
     vehiclesWithSeats,
   );
-  saveAssignment(modifiedAssignment, vehiclesWithSeats);
+  saveAssignment(modifiedAssignment, vehiclesWithSeats, prevAssignment);
   return assignmetFinished;
 }
 function deleteAlreadyAssignedSeats(
@@ -237,4 +249,18 @@ async function orderSeats(
     });
   });
   return seatsInAssignmentOrder;
+}
+
+async function saveAssignment(
+  assignment: SeatAssignments,
+  vehicles: vehicleWithSeats[],
+  prevAssignment: SeatAssignments,
+) {
+  const newAssignment: SeatAssignments = Object.fromEntries(Object.entries(assignment).filter(
+    ([seatId, memberId]) => prevAssignment[seatId] !== memberId)
+  );
+  await assignMembersToSeats(
+    newAssignment,
+    vehicles.map((v) => v.id),
+  );
 }

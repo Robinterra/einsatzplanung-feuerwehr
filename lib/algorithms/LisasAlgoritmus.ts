@@ -15,7 +15,6 @@ import {
   verifymemberQualificationsForSeat,
   verifyMemberIsMissonReady,
 } from "./rules";
-import { saveAssignment } from "./saveAssignment";
 import path from "path";
 import { readFile } from "fs/promises";
 
@@ -39,13 +38,18 @@ export async function assignMembersToVehicles(
   const vehiclesWithSeats = await getVehiclesWithSeats(vehicles ?? []);
   const seatsInAssignmentOrder = await orderSeats(vehiclesWithSeats);
 
-  const assignedSeats = (await getAssignedSeatIds()).map((s) => s.seat_id); //TODO: irgendwas falsch, Member werden geswitcht
+  const prevAssignment: SeatAssignments = {};
+  (await getAssignedSeatIds()).forEach(({ seat_id, member_id }) => {
+    if (seat_id) {
+      prevAssignment[seat_id] = member_id;
+      einteilung[seat_id] = member_id;
+    }
+  });
   let assignmetFinished = true;
 
   for (const seatId of seatsInAssignmentOrder) {
-    if (assignedSeats.includes(seatId)) {
-      console.log("Seat is already assigned.");
-      continue;
+    if (einteilung[seatId]) {
+      continue; // Skip already assigned seats
     }
     assignmetFinished = false;
     if (availableMembers.length === 0) {
@@ -65,7 +69,7 @@ export async function assignMembersToVehicles(
     einteilung,
     vehiclesWithSeats,
   );
-  saveAssignment(modifiedAssignment, vehiclesWithSeats);
+  saveAssignment(modifiedAssignment, vehiclesWithSeats, prevAssignment);
   return assignmetFinished;
 }
 async function modifyAssignment(
@@ -162,20 +166,6 @@ async function modifyAssignment(
   return einteilung;
 }
 
-function makeSet(
-  reqQualis: trainings_ref[],
-  members: MemberWithQualifications[],
-) {
-  return new Set(
-    members.filter((m) =>
-      reqQualis.every((reqQuali) =>
-        m.members.member_trainings_view.some(
-          (training) => training.training.ref === reqQuali,
-        ),
-      ),
-    ),
-  );
-}
 
 function findAndSetMember(
   members: MemberWithQualifications[],
@@ -235,6 +225,21 @@ async function orderSeats(vehiclesWithSeats: vehicleWithSeats[]): Promise<string
     });
   });
   return seatsInAssignmentOrder;
+}
+
+async function saveAssignment(
+  assignment: SeatAssignments,
+  vehicles: vehicleWithSeats[],
+  prevAssignment: SeatAssignments,
+) {
+  const newAssignment: SeatAssignments = Object.fromEntries(Object.entries(assignment).filter(
+      ([seatId, memberId]) => prevAssignment[seatId] !== memberId)
+    );
+  // teste für jeden seat in assignment, ob er in prevAssignment ist, wenn ja, dann schaue ob memberid gleich ist, wenn ja, dann nicht speichern, wenn nein, dann speichern
+  await assignMembersToSeats(
+    newAssignment,
+    vehicles.map((v) => v.id),
+  );
 }
 
 /*  const ZF = makeSet(["ZF"], availableMembers);
