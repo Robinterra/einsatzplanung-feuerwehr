@@ -4,7 +4,7 @@ import { MemberWithQualifications, seat } from "../db/queries";
 export function verifyMemberIsMissonReady(member: MemberWithQualifications): boolean {
     if (!member.members.member_trainings_view.some(training => training.training.ref === "TM")) {
         if (!member.members.member_trainings_view.some(training => training.training.ref === "TF")) {
-            console.log("member is not TM nor TF");
+            //console.log("member is not TM nor TF");
             return false;
         }
     }

@@ -1,0 +1,8 @@
+status,alarmcode_id,alarm_title,alarm_kind,duration_ms,time_to_calc_things_ms,duration_without_calc_ms,cycles,empty_required_seats,members_without_seat,messung_zeitpunkt_ms,waiting_time_ms,members_without_seat_over_time,squadron_vehicle_opta,time_till_squadron_ms,full_vehicle_opta,time_till_full_vehicle_ms
+finished,15,B BMA-Auslösung,B,17194,2527,14667,7,2,9,488,883,3,,,09-19-56,9605
+,,,,,,,,,,3106,3501,5,,,09-46-56,7605
+,,,,,,,,,,5716,6111,8,,,80-44-01,12605
+,,,,,,,,,,8340,0,8,,,,
+,,,,,,,,,,10923,1318,7,,,,
+,,,,,,,,,,13504,0,8,,,,
+,,,,,,,,,,16065,0,9,,,,
