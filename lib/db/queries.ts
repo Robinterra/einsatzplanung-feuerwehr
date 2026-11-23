@@ -1,5 +1,6 @@
 "use server";
 import { prisma } from "@/lib/db/prisma";
+import { verifyMemberIsMissonReady } from "@/lib/algorithms/rules";
 
 const TODAY = new Date(1772319600 * 1000); //1772319600
 
@@ -429,6 +430,102 @@ export async function getTrainigs(memberId: string) {
     },
   });
   return trainings.map((memberTraining) => memberTraining.training.ref);
+}
+
+export async function getDBIdsOfMembers(memberIds: string[]) {
+  const members = await prisma.members.findMany({
+    where: {
+      personnel_nr: {
+        in: memberIds.map((id) => Number(id)),
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return members.map((member) => member.id);
+}
+
+export async function getTimeTillSquadron(vehicle: vehicleWithSeats, startingTime: number) {
+  let lastPlacedMember : number = 0;
+  const presentMembersSeats = await getPresentMemberSeats();
+  for (const seat of vehicle.seats) {
+    if (seat.seat !== "ME" && seat.seat !== "STF" && seat.seat !== "STM") {
+      const member = presentMembersSeats.find((member) => member.seat_id === seat.id);
+      if (member?.presence_timestamp) {
+        lastPlacedMember = Math.max(lastPlacedMember, Number(member.presence_timestamp));
+      } else {
+        lastPlacedMember = 0;
+        break;
+      }
+    }
+  }
+  return Math.max(lastPlacedMember - startingTime, 0);
+}
+
+export async function getTimeTillFullVehicle(vehicle: vehicleWithSeats, startingTime: number) {
+  let lastPlacedMember : number = 0;
+  const presentMembersSeats = await getPresentMemberSeats();
+  for (const seat of vehicle.seats) {
+    const member = presentMembersSeats.find((member) => member.seat_id === seat.id);
+    if (member?.presence_timestamp) {
+      lastPlacedMember = Math.max(lastPlacedMember, Number(member.presence_timestamp));
+    }
+  }
+  return lastPlacedMember - startingTime;
+}
+
+export async function longestMemberWaitingTime(startingTime : number) {
+  let memberWithoutSeat = await getAvailableMemberWithQualifications();
+  memberWithoutSeat = memberWithoutSeat.filter((member) => verifyMemberIsMissonReady(member));
+  const memberTimesOfArrival = await prisma.member_presence_view.findMany({
+    where: {
+      present: 1,
+      seat_id: null,
+      id: {
+        in: memberWithoutSeat.map((member) => member.id),
+      },
+    },
+    select: {
+      presence_timestamp: true,
+    },
+  });
+  const currentTime = Date.now();
+  const waitingTimes = memberTimesOfArrival.map(
+    (member) => currentTime - member.presence_timestamp.getTime(),
+  );
+
+  return [currentTime - startingTime, Math.max(...waitingTimes, 0)];
+}
+
+export async function getPresentMemberSeats() {
+  return await prisma.member_presence_view.findMany({
+    where: {
+      present: 1,
+      seat_id: { not: null },
+    },
+    select: {
+      seat_id: true,
+      presence_timestamp: true,
+    },
+    orderBy: {
+      presence_timestamp: "desc",
+    },
+  })
+}
+
+export async function countEmpytRequiredSeats(vehicle: vehicleWithSeats) {
+  const memberSeats = await getPresentMemberSeats();
+  let counter : number = 0;
+  for (const seat of vehicle.seats) {
+    if (seat.seat === "GF" || seat.seat === "MA") {
+      if (!memberSeats.find((member) => member.seat_id === seat.id)){
+        counter += 1;
+      }
+    }
+  }
+  return counter;
 }
 
 /* Alle Menschen die Anwesend sind, davon die Personalnummer, Qualifikation (AGT, Fahrzeuge, TH, Führungslehrgang) */

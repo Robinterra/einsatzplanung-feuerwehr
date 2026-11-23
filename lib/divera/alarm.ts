@@ -30,6 +30,8 @@ export async function filterAlarms(): Promise<Alarm[] | null> {
     const alarmItems = await pullDiveraAlarms();
     const newAlarms: Alarm[] = [];
     const oneDay = 24 * 60 * 60;
+    const minute = 60;
+    
 
     for (const alarmItem of alarmItems) {
         if (alarmItem.vehicles.length > 0 && alarmItem.date > Number(TODAY)/1000 - oneDay) {
