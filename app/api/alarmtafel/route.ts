@@ -4,7 +4,7 @@ import path from "node:path";
 // hier weitere Imports für Algorithmen einfügen
 import { assignMembersToVehicles as assignWithLisaAlgorithm } from "@/lib/algorithms/LisasAlgoritmus";
 import { assignMembersToVehicles as assignWithNiklasAlgorithm } from "@/lib/algorithms/assignmentAlgo";
-
+import { assignMembersToVehicles as assignWithRobinAlgorithm } from "@/lib/algorithms/RobinsAlgo";
 
 import { startAssignment, type AssignmentAlgorithm } from "@/lib/algorithms/startAssignment";
 import {
@@ -20,6 +20,7 @@ import { setPresence } from "@/lib/controlling/queries";
 const assignmentAlgorithms: Record<string, AssignmentAlgorithm> = {
   assignmentAlgo: assignWithNiklasAlgorithm,
   LisasAlgoritmus: assignWithLisaAlgorithm,
+  RobinAlgo: assignWithRobinAlgorithm
 };
 
 export async function GET() {
