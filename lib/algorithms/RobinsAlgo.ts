@@ -14,8 +14,8 @@ class MemberWithMeta
     isInUse: boolean;
 }
 
-function hasNonEmptyValue(fields: SeatAssignments, key: string): boolean {
-  const value = fields[key];
+function hasNonEmptyValue(zuweisungen: SeatAssignments, seatId: string): boolean {
+  const value = zuweisungen[seatId];
   return Boolean(value);
 }
 
@@ -212,18 +212,19 @@ function canVehicleSended(vehicles: string[], einteilung: SeatAssignments, vehic
 
         for (const vecWithSeat of vehiclesWithSeats)
         {
-            if (vecWithSeat.opta !== fzgFull) continue;
+            if (vecWithSeat.id !== vehic) continue;
 
             for (var seat of vecWithSeat.seats)
             {
-                if (!hasNonEmptyValue(einteilung, seat.id)) continue;
-
+                if (hasNonEmptyValue(einteilung, seat.id)) continue;
                 fzgFull = false;
             }
         }
 
-        if (fzgFull) assigned = true;
+        if (!fzgFull) continue;
+        assigned = true;
         assignedVehic.push(vehic);
+        console.log(`fzg done: ${vehic}`);
     }
 
     return assigned;
@@ -231,12 +232,9 @@ function canVehicleSended(vehicles: string[], einteilung: SeatAssignments, vehic
 
 async function applyVehic(vehiclesWithSeats: any[], assigmentVehicles: string[], einteilung: SeatAssignments)
 {
-
-    var filteredVehic = vehiclesWithSeats.filter((vec) => assigmentVehicles.includes(vec.opt));
-
-    for (var vehic of filteredVehic)
+    for (var vehic of assigmentVehicles)
     {
-        await assignMembersToSeats(einteilung, [vehic.id]);
+        await assignMembersToSeats(einteilung, [vehic]);
     }
 }
 
@@ -245,9 +243,11 @@ export async function assignMembersToVehicles(vehicles: string[], signal?: Abort
     if (signal?.aborted) {
         return true;
     }
+    if (vehicles.length === 0) return true;
+
     const availableMembers = shuffle(await getAvailableMemberWithQualifications());
 
-    var allMembers: Array<MemberWithMeta>;
+    var allMembers: Array<MemberWithMeta> = [];
     for (var member of availableMembers)
     {
         var memMeta = new MemberWithMeta();
@@ -259,14 +259,14 @@ export async function assignMembersToVehicles(vehicles: string[], signal?: Abort
     const einteilung: SeatAssignments = {};
 
     const vehiclesWithSeats = await getVehiclesWithSeats(vehicles ?? []);
-    var assignedVehicles: Array<string>;
+    var assignedVehicles: Array<string> = [];
 
     tryGesamtZuteilung(vehiclesWithSeats, allMembers, einteilung, signal);
     var canSended: boolean = canVehicleSended(vehicles, einteilung, vehiclesWithSeats, assignedVehicles, signal);
 
     await applyVehic(vehiclesWithSeats, assignedVehicles, einteilung);
 
-  return canSended;
+  return false;
 }
 
 
