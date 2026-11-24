@@ -4,7 +4,8 @@ import { getAssignedVehicles, getAvailableMemberWithQualifications } from "../db
 import { Alarm } from "../divera/alarm";
 import { assignMembersToVehicles } from "./assignmentAlgo";
 import { setPresence } from "@/lib/controlling/queries";
-import { getDBIdsOfMembers, getTimeTillSquadron, getTimeTillFullVehicle, longestMemberWaitingTime, getVehiclesWithSeats, countEmpytRequiredSeats} from "@/lib/db/queries";
+import { verifyMemberIsMissonReady } from "@/lib/algorithms/rules"
+import { getDBIdsOfMembers, getTimeTillSquadron, getTimeTillFullVehicle, longestMemberWaitingTime, getVehiclesWithSeats, countEmpytRequiredSeats } from "@/lib/db/queries";
 
 export type AssignmentAlgorithm = (
     vehicles: string[],
@@ -46,7 +47,14 @@ export async function startAssignment(
                 await setPresence(dbMemberIds, true);
             }
         }
-        membersWithoutSeat.push((await getAvailableMemberWithQualifications()).length);
+        let countMembersWithoutSeat : number = 0;
+        const members = await getAvailableMemberWithQualifications();
+        for (const member of members) {
+            if (verifyMemberIsMissonReady(member)) {
+                countMembersWithoutSeat += 1;
+            }
+        }
+        membersWithoutSeat.push(countMembersWithoutSeat);
         timeToCalculateThings += Date.now() - timeStartAddMembers;
         i++;
 
@@ -130,12 +138,18 @@ async function calculateResults(
         unassignedRequiredSeats += await countEmpytRequiredSeats(vehicle);
     }
 
-    const membersWithoutSeat = await getAvailableMemberWithQualifications();
+    let membersWithoutSeat : number = 0;
+    const members = await getAvailableMemberWithQualifications();
+    for (const member of members) {
+        if (verifyMemberIsMissonReady(member)) {
+            membersWithoutSeat += 1;
+        }
+    }
 
     console.log("Längste Wartezeit: ", longestWaitingTimes, "ms");
     console.log("Squadron: ", timesTillSquadron, "ms");
     console.log("Full: ", timesTillFullVehicle, "ms");
-    console.log("Anzahl Member ohne Sitz: ", membersWithoutSeat.length);
+    console.log("Anzahl Member ohne Sitz: ", membersWithoutSeat);
 
     await saveResultsCsv({
         alarm,
@@ -147,7 +161,7 @@ async function calculateResults(
         timesTillSquadron: Object.fromEntries(timesTillSquadron),
         timesTillFullVehicle: Object.fromEntries(timesTillFullVehicle),
         membersWithoutSeatOverTime,
-        membersWithoutSeat: membersWithoutSeat.length,
+        membersWithoutSeat: membersWithoutSeat,
     });
 }
 
