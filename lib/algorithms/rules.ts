@@ -44,11 +44,9 @@ export function verifymemberQualificationsForSeat(member: MemberWithQualificatio
 
 export function hasAGTQualification(trainings: trainings_ref[] ): boolean {
     const requiredRequirements:trainings_ref[] = ["AGT", "AGT_Unterweisung", "AGT_Strecke", "G26_3"];
-    const exerciseOrOperation:trainings_ref[] = ["AGT_Uebung", "AGT_Einsatz"];
 
     return (
-        requiredRequirements.every((requirement) => trainings.includes(requirement)) &&
-        exerciseOrOperation.some((requirement) => trainings.includes(requirement))
+        requiredRequirements.every((requirement) => trainings.includes(requirement))
     );
 }
 
