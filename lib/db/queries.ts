@@ -204,13 +204,15 @@ export async function getVehiclesWithSeats(vehicleID: string[]) {
     }));
 }
 export async function getAssignedSeatIds() {
-  const seatIds = await prisma.member_presence_view.findMany({
-    select: { seat_id: true },
+  const assigendSeats = await prisma.member_presence_view.findMany({
+    select: { seat_id: true,
+              member_id: true
+     },
     where: {
       seat_id: { not: null },
     },
   });
-  return seatIds;
+  return assigendSeats;
 }
 
 export async function getPresentMemberAssignments(vehicleID: string[]) {
